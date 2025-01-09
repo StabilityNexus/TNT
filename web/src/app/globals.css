@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #5cacc5;
+  /* Light theme primary color */
+  --primary-foreground: #171717;
+  --secondary: #b5e8f8;
+  --secondary-foreground: #171717;
+  --border: #e0e0e0;
+  --input: #f4f4f4;
+  --ring: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --primary: #ba9901;
+    /* Dark theme primary color */
+    --primary-foreground: #ededed;
+    --secondary: #2b2b2b;
+    --secondary-foreground: #ededed;
+    --border: #333333;
+    --input: #3c3c3c;
+    --ring: #171717;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Arial", sans-serif;
+  }
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --primary: #ba9901;
+  --primary-foreground: #ededed;
+  --secondary: #2b2b2b;
+  --secondary-foreground: #ededed;
+  --border: #333333;
+  --input: #3c3c3c;
+  --ring: #171717;
+}
+
+html {
+  scroll-behavior: smooth;
+}
