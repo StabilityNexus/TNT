@@ -115,16 +115,18 @@ export default function Home() {
               ))}
             </div>
             {!isWalletConnected ? (
-              <RainbowKitProvider
-                theme={lightTheme({
-                  accentColor: "#FFC947",
-                  accentColorForeground: "#000000",
-                  borderRadius: "medium",
-                  fontStack: "system",
-                })}
-              >
-                <ConnectButton />
-              </RainbowKitProvider>
+              <div className="mt-4">
+                <RainbowKitProvider
+                  theme={lightTheme({
+                    accentColor: "#FFC947",
+                    accentColorForeground: "#000000",
+                    borderRadius: "medium",
+                    fontStack: "system",
+                  })}
+                >
+                  <ConnectButton />
+                </RainbowKitProvider>
+              </div>
             ) : (
               <div className="max-w-full mt-4 flex p-8">
                 <Button
@@ -138,61 +140,66 @@ export default function Home() {
 
                 {showPopup && (
                   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-11/12 max-w-md">
-                      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-                        Enter CAT Details
-                      </h2>
-
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            CAT Address
-                          </label>
-                          <Input
-                            placeholder="Enter CAT address"
-                            value={catAddress}
-                            onChange={(e) => setCatAddress(e.target.value)}
-                            className="w-full"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Network
-                          </label>
-                          <Select
-                            value={selectedChain}
-                            onValueChange={setSelectedChain}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select network" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {supportedChains.map((chain) => (
-                                <SelectItem key={chain.id} value={chain.id}>
-                                  {chain.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                  <div className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] p-8 rounded-3xl shadow-2xl w-11/12 max-w-md">
+                    <h2 className="text-2xl font-extrabold text-[#3E3E3E] dark:text-white mb-6 transition duration-200">
+                      Enter CAT Details
+                    </h2>
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-[#3E3E3E] dark:text-white mb-2">
+                          CAT Address
+                        </label>
+                        <Input
+                          placeholder="Enter CAT address"
+                          value={catAddress}
+                          onChange={(e) => setCatAddress(e.target.value)}
+                          className="w-full bg-[#C3F3FB] dark:bg-[#363E62] text-[#3E3E3E] dark:text-indigo-200 border border-[#6c6c6c] p-4 rounded-2xl"
+                        />
                       </div>
-
-                      <div className="flex justify-end space-x-4 mt-6">
-                        <Button
-                          onClick={() => setShowPopup(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={handleUseCAT}
-                          disabled={!catAddress.trim() || !selectedChain}
-                        >
-                          Submit
-                        </Button>
+                      <div>
+                        <label className="block text-sm font-semibold text-[#3E3E3E] dark:text-white mb-2">
+                          Network
+                        </label>
+                        <Select value={selectedChain} onValueChange={setSelectedChain}>
+                          <SelectTrigger className="w-full bg-[#C3F3FB] dark:bg-[#363E62] text-[#3E3E3E] dark:text-indigo-200 border border-[#6c6c6c] p-4 rounded-2xl">
+                            <SelectValue placeholder="Select network" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {supportedChains.map((chain) => (
+                              <SelectItem
+                                key={chain.id}
+                                value={chain.id}
+                                className="hover:bg-indigo-100 dark:hover:bg-indigo-900"
+                              >
+                                {chain.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
+                    <div className="flex justify-end space-x-4 mt-8">
+                      <Button
+                        onClick={() => setShowPopup(false)}
+                        className="bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-700 text-white px-6 py-3 rounded-xl transition duration-200"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleUseCAT}
+                        disabled={!catAddress.trim() || !selectedChain}
+                        className={`${
+                          !catAddress.trim() || !selectedChain
+                            ? "bg-gray-400 dark:bg-gray-600"
+                            : "bg-[#20253a] hover:bg-[#3E3E3E] dark:bg-[#FFC947] dark:hover:bg-[#FFC947]"
+                        } text-white px-6 py-3 rounded-xl transition duration-200`}
+                      >
+                        Submit
+                      </Button>
+                    </div>
                   </div>
+                </div>
+                
                 )}
               </div>
             )}
@@ -245,7 +252,7 @@ export default function Home() {
                 <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white relative">
                   {/* Description Background Animation */}
                   {/* Description Text with Transition */}
-                  <span className="relative z-10 block bg-clip-text text-gray-400 group-hover:text-blue-500 transition-colors duration-500">
+                  <span className="relative z-10 block bg-clip-text text-gray-400 group-hover:text-[#6A0DAD] dark:group-hover:text-[#FFC947] transition-colors duration-500">
                     {service.description}
                   </span>
                 </h5>
