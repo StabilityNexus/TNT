@@ -36,13 +36,13 @@ const Navbar = () => {
             <div className="absolute ml-[-12px] flex items-baseline left-0 top-1/2 transform -translate-y-1/2 mt-2">
               <Image
                 src={resolvedTheme === "dark" ? logo_dark : logo_light}
-                alt="Clowder"
+                alt="TNT"
                 width={70}
                 height={70}
                 priority
               />
               <h1
-                className="text-4xl font-bold ml-[10px] pb-2 dark:text-[#BA9901]"
+                className="text-4xl text-blue font-bold ml-[10px] pb-2 dark:text-[#BA9901]"
                 style={{
                   fontFamily: "var(--font-bebas-nueue)",
                   marginLeft: "-2px",
@@ -96,7 +96,7 @@ const Navbar = () => {
                     className="block py-2 hover:text-[#6A0DAD]"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    CREATE CAT
+                    CREATE TNT
                   </Link>
                 </li>
                 <li>
@@ -124,7 +124,7 @@ const Navbar = () => {
             </Link>
           )}
           <Link href="/create" className="hover:text-[#6A0DAD]">
-            CREATE CAT
+            CREATE TNT
           </Link>
           <Link href="/#Contact" className="hover:text-[#6A0DAD]">
             ABOUT US

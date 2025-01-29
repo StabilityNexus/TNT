@@ -171,10 +171,10 @@ export default function CreateCAT() {
           <div className="p-8">
             <div className="mb-8">
               <h1 className="text-xl font-extrabold text-[#3E3E3E] dark:text-white transition duration-200">
-                Create Your CAT
+                Create Your TNT
               </h1>
               <p className="text-3xl mt-20 text-[#3E3E3E] dark:text-white transition duration-200 pr-8">
-                Deploy your <span className="text-[#6A0DAD] font-semibold dark:font-normal dark:text-[#FFC947] font-mono">Contribution Accounting Token</span> seamlessly
+                Deploy your <span className="text-[#6A0DAD] font-semibold dark:font-normal dark:text-[#FFC947] font-mono">Trust Network Token</span> seamlessly
               </p>
             </div>
             {!address ? (
@@ -232,7 +232,7 @@ export default function CreateCAT() {
                   className="py-3 bg-[#20253a] rounded-xl w-[90%] text-white font-bold text-lg hover:scale-105 hover:shadow-lg transition-all duration-500 border-none p-8"
                   disabled={isDeploying}
                 >
-                  {isDeploying ? "Deploying..." : "Deploy CAT"}
+                  {isDeploying ? "Deploying..." : "Deploy TNT"}
                 </Button>
               </form>
             )}

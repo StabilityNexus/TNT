@@ -84,7 +84,7 @@ export default function Home() {
               <h1 className="hidden md:block text-7xl font-bold mb-8 font-mono text-[#3E3E3E] dark:text-[#00ADB5]">
                 Welcome to{" "}
                 <span className="text-[#6A0DAD] dark:text-[#FFC947]">
-                  Clowder
+                  TNT
                 </span>
               </h1>
 
@@ -92,14 +92,14 @@ export default function Home() {
               <h1 className="block md:hidden text-3xl font-bold mb-8 font-mono text-[#3E3E3E] dark:text-[#00ADB5]">
                 Welcome to{" "}
                 <span className="text-[#6A0DAD] dark:text-[#FFC947]">
-                  Clowder
+                  TNT
                 </span>
               </h1>
             </div>
 
             <p className="text-xl md:text-2xl max-w-4xl font-mono text-[#6A0DAD] dark:text-[#00ADB5] dark:font-normal font-semibold">
-              Create Contribution Accounting Tokens (CATs) <br />
-              to track contributions to your projects.
+              Trust Network Tokens (TNTs) <br />
+              Non-fungible tokens within a Trust Network.
             </p>
             <div className="flex space-x-4 mt-12">
               {contact_links.map(({ href, icon }, index) => (
@@ -133,24 +133,24 @@ export default function Home() {
                   onClick={() => router.push("/create")}
                   className="py-3 bg-[#20253a] rounded-xl w-[90%] text-white font-bold text-lg hover:scale-105 hover:shadow-lg transition-all duration-500 border-none p-8 mr-4"
                 >
-                  Create CAT
+                  Create TNT
                 </Button>
                 <Button onClick={() => setShowPopup(true)}
-                  className="py-3 bg-[#20253a] rounded-xl w-[90%] text-white font-bold text-lg hover:scale-105 hover:shadow-lg transition-all duration-500 border-none p-8">Use CAT</Button>
+                  className="py-3 bg-[#20253a] rounded-xl w-[90%] text-white font-bold text-lg hover:scale-105 hover:shadow-lg transition-all duration-500 border-none p-8">Use TNT</Button>
 
                 {showPopup && (
                   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                   <div className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] p-8 rounded-3xl shadow-2xl w-11/12 max-w-md">
                     <h2 className="text-2xl font-extrabold text-[#3E3E3E] dark:text-white mb-6 transition duration-200">
-                      Enter CAT Details
+                      Enter TNT Details
                     </h2>
                     <div className="space-y-6">
                       <div>
                         <label className="block text-sm font-semibold text-[#3E3E3E] dark:text-white mb-2">
-                          CAT Address
+                          TNT Address
                         </label>
                         <Input
-                          placeholder="Enter CAT address"
+                          placeholder="Enter TNT address"
                           value={catAddress}
                           onChange={(e) => setCatAddress(e.target.value)}
                           className="w-full bg-[#C3F3FB] dark:bg-[#363E62] text-[#3E3E3E] dark:text-indigo-200 border border-[#6c6c6c] p-4 rounded-2xl"
@@ -231,7 +231,7 @@ export default function Home() {
             className="text-3xl md:text-5xl font-bold mb-12 dark:text-[#00ADB5]"
             style={{ fontFamily: "var(--font-bebas-nueue)" }}
           >
-            Why CATs?
+            Why TNTs?
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 ml-24">
             {services.map((service, index) => (
@@ -277,7 +277,7 @@ export default function Home() {
             {/* Contact Info */}
             <div>
               <p className="text-lg md:text-2xl mb-4 font-mono font-semibold dark:text-[#00ADB5]">
-                Clowder was developed by <br />
+                TNT was developed by <br />
                 <span className="text-[#6A0DAD] dark:text-[#FFC947]">The Stable Order</span> <br />
                 within the <span className="text-[#6A0DAD] dark:text-[#FFC947]">Stability Nexus.</span>
               </p>
