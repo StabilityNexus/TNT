@@ -238,7 +238,7 @@ export default function Home() {
               <a
                 href="#"
                 key={index}
-                className="relative flex flex-col items-center bg-primary rounded-lg shadow-sm md:flex-row md:max-w-xl overflow-hidden transform transition-transform duration-300 hover:scale-105 group"
+                className="relative flex flex-col items-center bg-white rounded-lg shadow-sm md:flex-row md:max-w-xl overflow-hidden transform transition-transform duration-300 hover:scale-105 group"
               >
                 {/* Service Image */}
                 <Image

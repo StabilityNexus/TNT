@@ -4,49 +4,75 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract TNTContract is ERC721Enumerable, AccessControl {
+/**
+ * @title TNT
+ * @dev A trust-based non-transferable token contract with revocation support.
+ */
+contract TNT is ERC721Enumerable, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant REVOKER_ROLE = keccak256("REVOKER_ROLE");
-
+    
     uint256 private _nextTokenId;
     mapping(uint256 => address) public tokenIssuers;
+    bool public immutable revokable;
+    
+    /**
+     * @dev Struct to store metadata related to a token.
+     */
+    struct TokenMetadata {
+        uint256 issuedAt; // Timestamp when the token was issued
+    }
+    mapping(uint256 => TokenMetadata) public metadata;
 
-    // Events
+    /**
+     * @dev Emitted when a token is issued.
+     */
     event TokenIssued(address indexed issuer, address indexed recipient, uint256 tokenId);
+    
+    /**
+     * @dev Emitted when a token is revoked.
+     */
     event TokenRevoked(address indexed revoker, uint256 tokenId);
 
+    /**
+     * @dev Constructor to initialize the contract.
+     * @param admin The address of the contract administrator.
+     * @param name The name of the token.
+     * @param symbol The symbol of the token.
+     * @param _revokable Boolean indicating if the token can be revoked.
+     */
     constructor(
         address admin,
         string memory name,
-        string memory symbol
+        string memory symbol,
+        bool _revokable
     ) ERC721(name, symbol) {
         _setupRole(DEFAULT_ADMIN_ROLE, admin);
         _setupRole(MINTER_ROLE, admin);
         _setupRole(REVOKER_ROLE, admin);
+        revokable = _revokable;
     }
 
     /**
-     * @dev Issues a trust token to the specified recipient.
-     * @param recipient The address to receive the trust token.
+     * @dev Issues a new trust token to a recipient.
+     * @param recipient The address receiving the token.
      */
     function issueToken(address recipient) public onlyRole(MINTER_ROLE) {
         uint256 tokenId = _nextTokenId++;
         _safeMint(recipient, tokenId);
         tokenIssuers[tokenId] = msg.sender;
-
+        metadata[tokenId] = TokenMetadata(block.timestamp);
         emit TokenIssued(msg.sender, recipient, tokenId);
     }
 
     /**
-     * @dev Revokes a trust token. Can only be called by the issuer.
+     * @dev Revokes a trust token if revocation is enabled.
      * @param tokenId The ID of the token to revoke.
      */
     function revokeToken(uint256 tokenId) public onlyRole(REVOKER_ROLE) {
-        require(tokenIssuers[tokenId] == msg.sender, "You are not the issuer of this token");
-
-        address owner = ownerOf(tokenId);
+        require(revokable, "Token is non-revokable");
+        require(tokenIssuers[tokenId] == msg.sender, "You are not the issuer");
         _burn(tokenId);
-
         emit TokenRevoked(msg.sender, tokenId);
     }
 
@@ -56,12 +82,26 @@ contract TNTContract is ERC721Enumerable, AccessControl {
      */
     function burnToken(uint256 tokenId) public {
         require(ownerOf(tokenId) == msg.sender, "You do not own this token");
-
         _burn(tokenId);
     }
 
     /**
-     * @dev Grants minter role to an account.
+     * @dev Overrides transfer functions to disable token transfers.
+     */
+    function transferFrom(address, address, uint256) public pure override {
+        revert("Transfers are disabled");
+    }
+
+    function safeTransferFrom(address, address, uint256) public pure override {
+        revert("Transfers are disabled");
+    }
+
+    function safeTransferFrom(address, address, uint256, bytes memory) public pure override {
+        revert("Transfers are disabled");
+    }
+
+    /**
+     * @dev Grants the minter role to an account.
      * @param account The address to be granted the minter role.
      */
     function grantMinterRole(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -69,7 +109,7 @@ contract TNTContract is ERC721Enumerable, AccessControl {
     }
 
     /**
-     * @dev Grants revoker role to an account.
+     * @dev Grants the revoker role to an account.
      * @param account The address to be granted the revoker role.
      */
     function grantRevokerRole(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -77,7 +117,9 @@ contract TNTContract is ERC721Enumerable, AccessControl {
     }
 
     /**
-     * @dev Overrides supportsInterface for AccessControl and ERC721.
+     * @dev Overrides supportsInterface to include AccessControl and ERC721 support.
+     * @param interfaceId The interface ID to check.
+     * @return Whether the interface is supported.
      */
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Enumerable, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
