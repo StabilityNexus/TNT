@@ -1,37 +1,34 @@
 // SPDX-License-Identifier: AEL
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title TNT
- * @dev A trust-based non-transferable token contract with revocation support.
+ * @dev A trust-based non-transferable token contract with optional revocation support.
  */
-contract TNT is ERC721Enumerable, AccessControl {
+contract TNT is ERC721, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant REVOKER_ROLE = keccak256("REVOKER_ROLE");
-    
+
     uint256 private _nextTokenId;
     mapping(uint256 => address) public tokenIssuers;
     bool public immutable revokable;
-    
+
     /**
      * @dev Struct to store metadata related to a token.
      */
     struct TokenMetadata {
         uint256 issuedAt; // Timestamp when the token was issued
     }
+
     mapping(uint256 => TokenMetadata) public metadata;
 
-    /**
-     * @dev Emitted when a token is issued.
-     */
+    /// @dev Event emitted when a token is issued.
     event TokenIssued(address indexed issuer, address indexed recipient, uint256 tokenId);
-    
-    /**
-     * @dev Emitted when a token is revoked.
-     */
+
+    /// @dev Event emitted when a token is revoked.
     event TokenRevoked(address indexed revoker, uint256 tokenId);
 
     /**
@@ -47,9 +44,9 @@ contract TNT is ERC721Enumerable, AccessControl {
         string memory symbol,
         bool _revokable
     ) ERC721(name, symbol) {
-        _setupRole(DEFAULT_ADMIN_ROLE, admin);
-        _setupRole(MINTER_ROLE, admin);
-        _setupRole(REVOKER_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(MINTER_ROLE, admin);
+        _grantRole(REVOKER_ROLE, admin);
         revokable = _revokable;
     }
 
@@ -86,18 +83,22 @@ contract TNT is ERC721Enumerable, AccessControl {
     }
 
     /**
-     * @dev Overrides transfer functions to disable token transfers.
+     * @dev Hook that is called before any token transfer. Prevents all transfers except minting and burning.
+     * @param from The address of the sender.
+     * @param to The address of the recipient.
+     * @param tokenId The ID of the token being transferred.
      */
-    function transferFrom(address, address, uint256) public pure override {
-        revert("Transfers are disabled");
-    }
+    
+    function _transfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override {
+        // Allow minting (from == address(0)) and burning (to == address(0)), but block regular transfers
+        require(from == address(0) || to == address(0), "Err: token transfer is BLOCKED");
 
-    function safeTransferFrom(address, address, uint256) public pure override {
-        revert("Transfers are disabled");
-    }
-
-    function safeTransferFrom(address, address, uint256, bytes memory) public pure override {
-        revert("Transfers are disabled");
+        // Call the parent class's _transfer method
+        super._transfer(from, to, tokenId);
     }
 
     /**
@@ -121,7 +122,7 @@ contract TNT is ERC721Enumerable, AccessControl {
      * @param interfaceId The interface ID to check.
      * @return Whether the interface is supported.
      */
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721Enumerable, AccessControl) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }
