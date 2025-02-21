@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
+
 /**
  * @title TNT
  * @dev A trust-based non-transferable token contract with optional revocation support.
@@ -83,22 +84,21 @@ contract TNT is ERC721, AccessControl {
     }
 
     /**
-     * @dev Hook that is called before any token transfer. Prevents all transfers except minting and burning.
-     * @param from The address of the sender.
+     * @dev Hook that is called before any token transfer.
+     * It prevents all transfers except for minting and burning.
      * @param to The address of the recipient.
      * @param tokenId The ID of the token being transferred.
      */
     
-    function _transfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual override {
-        // Allow minting (from == address(0)) and burning (to == address(0)), but block regular transfers
-        require(from == address(0) || to == address(0), "Err: token transfer is BLOCKED");
 
-        // Call the parent class's _transfer method
-        super._transfer(from, to, tokenId);
+    function _update(address to, uint256 tokenId, address auth) 
+    internal 
+    override 
+    returns (address) 
+    {
+        address from = super._update(to, tokenId, auth);
+        require(from == address(0), "TNTs are non-transferable"); // Only minting is allowed
+        return from;
     }
 
     /**
