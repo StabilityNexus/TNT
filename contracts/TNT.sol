@@ -97,7 +97,12 @@ contract TNT is ERC721, AccessControl {
     returns (address) 
     {
         address from = super._update(to, tokenId, auth);
-        require(from == address(0), "TNTs are non-transferable"); // Only minting is allowed
+
+        // Block only regular transfers (not minting or burning)
+        if (from != address(0) && to != address(0)) {
+            revert("TNTs are non-transferable");
+        }
+
         return from;
     }
 
