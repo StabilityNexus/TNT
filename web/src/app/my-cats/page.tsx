@@ -169,28 +169,9 @@ export default function MyCATsPage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div
-                  className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
-                >
-                  <h3 className="text-xl font-extrabold text-[#3E3E3E] dark:text-white transition duration-200">
-                    CATROBAT
-                  </h3>
-                  <p className="text-sm text-[#3E3E3E] dark:text-indigo-200 mt-2">
-                    Symbol: <span className="font-semibold">CBT</span>
-                  </p>
-                  <p className="text-sm text-[#3E3E3E] dark:text-indigo-200">
-                    Chain ID: <span className="font-semibold">ETH</span>
-                  </p>
-                  <Link
-                    href={`/c?vault=${123}&chainId=${123}`}
-                    className="inline-block mt-4 text-[#6A0DAD] dark:text-[#FFC947] font-semibold hover:underline transition duration-200"
-                  >
-                    View Details
-                  </Link>
-                </div>
-                </div>
-          
+            <p className="text-lg font-semibold text-gray-600 dark:text-indigo-300 mt-4">
+            You don't own any <span className="text-[#6A0DAD] dark:text-[#FFC947]">TNTs</span> yet. Start exploring and mint your first one!
+          </p>
           )}
         </div>
       </div>

@@ -33,23 +33,26 @@ const Navbar = () => {
         {/* Logo and Text */}
         <div>
           <Link href="/">
-            <div className="absolute ml-[-12px] flex items-baseline left-0 top-1/2 transform -translate-y-1/2 mt-2">
+            <div className="absolute ml-[-12px] flex items-baseline left-0 top-1/2 transform -translate-y-1/2 mt-2 mb-2">
               <Image
+              className="mt-2"
                 src={resolvedTheme === "dark" ? logo_dark : logo_light}
                 alt="TNT"
                 width={70}
                 height={70}
                 priority
               />
-              <h1
-                className="text-4xl text-blue font-bold ml-[10px] pb-2 dark:text-[#BA9901]"
-                style={{
-                  fontFamily: "var(--font-bebas-nueue)",
-                  marginLeft: "-2px",
-                }}
-              >
-                TNT
-              </h1>
+              <div className="">
+                <h1
+                  className="text-7xl text-purple-700 font-bold ml-[10px] pb-2 dark:text-[#BA9901]"
+                  style={{
+                    fontFamily: "var(--font-bebas-nueue)",
+                    marginLeft: "8px",
+                  }}
+                >
+                  TNT
+                </h1>
+              </div>
             </div>
           </Link>
         </div>
