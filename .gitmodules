@@ -1,0 +1,3 @@
+[submodule "contra/lib/forge-std"]
+	path = contra/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
