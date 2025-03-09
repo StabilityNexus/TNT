@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { ClowderVaultFactories } from "@/utils/address";
+import { TNTVaultFactories } from "@/utils/address";
 import { useAccount } from "wagmi";
 import { config } from "@/utils/config";
 import { writeContract } from "@wagmi/core";
-import { CAT_FACTORY_ABI } from "@/contractsABI/CatFactoryABI";
+import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
 import logo_light from "../../images/elem-dark.svg";
 import logo_dark from "../../images/elem-light.svg";
 import Image from "next/image";
@@ -23,9 +23,7 @@ import { useTheme } from "next-themes";
 interface DeployContractProps {
   tokenName: string;
   tokenSymbol: string;
-  maxSupply: string;
-  thresholdSupply: string;
-  maxExpansionRate: string;
+  revokable: boolean;
 }
 
 const fields = [
@@ -43,36 +41,13 @@ const fields = [
     placeholder: "TKN",
     description: "A short identifier for your token (2-4 characters)",
   },
-  {
-    id: "maxSupply",
-    label: "Maximum Supply",
-    type: "number",
-    placeholder: "1000000",
-    description: "The maximum number of tokens that can exist",
-  },
-  {
-    id: "thresholdSupply",
-    label: "Threshold Supply",
-    type: "number",
-    placeholder: "500000",
-    description: "The supply threshold that triggers expansion",
-  },
-  {
-    id: "maxExpansionRate",
-    label: "Maximum Expansion Rate",
-    type: "number",
-    placeholder: "5",
-    description: "Maximum percentage the supply can expand (1-100)",
-  },
 ];
 
-export default function CreateCAT() {
+export default function CreateTNT() {
   const [formData, setFormData] = useState<DeployContractProps>({
     tokenName: "",
     tokenSymbol: "",
-    maxSupply: "",
-    thresholdSupply: "",
-    maxExpansionRate: "",
+    revokable: false,
   });
   const [isDeploying, setIsDeploying] = useState(false);
 
@@ -105,57 +80,44 @@ export default function CreateCAT() {
     try {
       setIsDeploying(true);
       const chainId = config.state.chainId;
-      if (!ClowderVaultFactories[chainId]) {
+      if (!TNTVaultFactories[chainId]) {
         toast.error("Contract factory instance not available");
         return;
       }
 
-      const {
-        maxSupply,
-        thresholdSupply,
-        maxExpansionRate,
-        tokenName,
-        tokenSymbol,
-      } = formData;
+      const { tokenName, tokenSymbol, revokable } = formData;
 
       const tx = await writeContract(config as any, {
-        address: ClowderVaultFactories[chainId],
-        abi: CAT_FACTORY_ABI,
-        functionName: "createCAT",
-        args: [
-          parseInt(maxSupply),
-          parseInt(thresholdSupply),
-          maxExpansionRate.toString(),
-          tokenName,
-          tokenSymbol,
-        ],
+        address: TNTVaultFactories[chainId],
+        abi: TNTFactoryAbi,
+        functionName: "createTNT",
+        args: [tokenName, tokenSymbol, revokable],
       });
 
       const txDetails = {
         tokenName,
         tokenSymbol,
-        maxSupply,
-        thresholdSupply,
-        maxExpansionRate,
+        revokable,
         transactionHash: tx,
         timestamp: new Date().toISOString(),
       };
 
       saveTransaction(txDetails);
-      toast.success("CAT contract deployed successfully!");
-      router.push("/my-cats");
+      toast.success("TNT contract deployed successfully!");
+      router.push("/my-tnts");
     } catch (error) {
-      console.error("Error deploying CAT:", error);
-      toast.error("Failed to deploy CAT contract");
+      console.error("Error deploying TNT:", error);
+      toast.error("Failed to deploy TNT contract");
     } finally {
       setIsDeploying(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -169,12 +131,12 @@ export default function CreateCAT() {
       <div className="min-h-screen flex items-center justify-center py-12 px-4 relative">
         <div className="max-w-3xl w-full flex bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-l-3xl shadow-[#09090b] shadow-2xl">
           <div className="p-8">
-            <div className="mb-8">
-              <h1 className="text-xl font-extrabold text-[#3E3E3E] dark:text-white transition duration-200">
-                Create Your TNT
-              </h1>
-              <p className="text-3xl mt-20 text-[#3E3E3E] dark:text-white transition duration-200 pr-8">
-                Deploy your <span className="text-[#6A0DAD] font-semibold dark:font-normal dark:text-[#FFC947] font-mono">Trust Network Token</span> seamlessly
+            <div className="mb-10">
+              <p className="text-3xl mt-5 text-[#3E3E3E] dark:text-white transition duration-200 pr-8">
+                Create Your{" "}
+                <span className="text-[#6A0DAD] font-semibold dark:font-normal dark:text-[#FFC947] font-mono">
+                  Trust Network Token
+                </span>{" "}
               </p>
             </div>
             {!address ? (
@@ -199,8 +161,8 @@ export default function CreateCAT() {
                 onSubmit={handleSubmit}
                 className="text-indigo-200 font-medium flex flex-wrap gap-12"
               >
-                {fields.map(({ id, label, type, placeholder, description }, index) => (
-                  <div key={id} className={`space-y-3 ${index > 0 ? "w-[40%]" : "w-[90%]"}`}>
+                {fields.map(({ id, label, type, placeholder, description }) => (
+                  <div key={id} className="space-y-3 w-[45%]">
                     <div className="flex items-center justify-between">
                       <Label
                         htmlFor={id}
@@ -221,18 +183,39 @@ export default function CreateCAT() {
                       type={type}
                       placeholder={placeholder}
                       required
-                      value={formData[id as keyof DeployContractProps]}
+                      value={
+                        formData[id as keyof DeployContractProps] as string
+                      }
                       onChange={handleChange}
                       className="w-full bg-[#C3F3FB] dark:bg-[#363E62] text-[#3E3E3E] border border-[#6c6c6c] dark:text-indigo-200 p-6 rounded-2xl"
                     />
                   </div>
                 ))}
+                <div className="w-full">
+                  <Label
+                    htmlFor="revokable"
+                    className="block text-sm font-semibold text-[#3E3E3E] dark:text-white hover:text-white transition duration-200"
+                  >
+                    Revokable
+                  </Label>
+                  <Input
+                    id="revokable"
+                    name="revokable"
+                    type="checkbox"
+                    checked={formData.revokable}
+                    onChange={handleChange}
+                    className="w-6 h-6"
+                  />
+                  <p className="text-xs text-[#3E3E3E] dark:text-indigo-200 mt-1">
+                    If checked, the token will be revokable.
+                  </p>
+                </div>
                 <Button
                   type="submit"
                   className="py-3 bg-[#20253a] rounded-xl w-[90%] text-white font-bold text-lg hover:scale-105 hover:shadow-lg transition-all duration-500 border-none p-8"
                   disabled={isDeploying}
                 >
-                  {isDeploying ? "Deploying..." : "Deploy TNT"}
+                  {isDeploying ? "Deploying..." : "Deploy TNT Contract"}
                 </Button>
               </form>
             )}

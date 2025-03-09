@@ -35,7 +35,7 @@ const Navbar = () => {
           <Link href="/">
             <div className="absolute ml-[-12px] flex items-baseline left-0 top-1/2 transform -translate-y-1/2 mt-2 mb-2">
               <Image
-              className="mt-2"
+                className="mt-2"
                 src={resolvedTheme === "dark" ? logo_dark : logo_light}
                 alt="TNT"
                 width={70}
@@ -85,7 +85,7 @@ const Navbar = () => {
               >
                 {address && (
                   <li>
-                    <Link href="/my-cats">
+                    <Link href="/my-tnts">
                       <Avatar />
                     </Link>
                   </li>
@@ -122,7 +122,7 @@ const Navbar = () => {
           style={{ fontFamily: "var(--font-bebas-nueue)" }}
         >
           {address && (
-            <Link href="/my-cats">
+            <Link href="/my-tnts">
               <Avatar />
             </Link>
           )}

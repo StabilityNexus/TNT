@@ -15,6 +15,7 @@ import {
 } from "@rainbow-me/rainbowkit";
 import * as chains from "wagmi/chains";
 import { citreaTestnet } from "@/components/CitreaTestnet";
+import { ethereumClassic } from "@/components/EthereumClassic";
 
 // const AllChains: readonly [Chain, ...Chain[]] = [
 //   ...(Object.values(chains) as Chain[]),
@@ -24,6 +25,6 @@ import { citreaTestnet } from "@/components/CitreaTestnet";
 export const config = getDefaultConfig({
   appName: "clowder",
   projectId: process.env.NEXT_PUBLIC_PROJECT_ID ?? "",
-  chains: [scrollSepolia, polygon, mainnet, citreaTestnet],
+  chains: [ethereumClassic, scrollSepolia, polygon, mainnet, citreaTestnet],
   ssr: true,
 });

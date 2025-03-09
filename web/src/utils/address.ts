@@ -1,6 +1,6 @@
-export const ClowderVaultFactories = {
-  534351: "0xff1be271440b76d3064556422f4458bed5bbb4b5",
-  5115: "0xf899F1b8c710bC4Bc2462cE1B65265760921b2ca",
+export const TNTVaultFactories = {
+  534351: "0x9c288560e4d10987853fa87232a54575e1d832c9",
+  61: "0x3936A2281A4585E7Bee5710839D0F29fBAF3Fc77",
 } as {
   [key: number]: `0x${string}`;
 };

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import Layout from "@/components/Layout";
 
 export async function generateStaticParams() {
-  return [{ cat: "c" }];
+  return [{ tnt: "t" }];
 }
 
 export default function VaultPage() {

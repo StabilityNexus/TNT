@@ -1,7 +1,6 @@
+# TNT
 
-# Clowder
-
-Clowder is a decentralized application (dApp) for creating and managing CAT (Custom Asset Tokens) using MetaMask and Web3. This project allows users to connect their MetaMask wallet, create new CATs, and interact with existing CATs.
+TNT is a decentralized application (dApp) for creating and managing CAT (Custom Asset Tokens) using MetaMask and Web3. This project allows users to connect their MetaMask wallet, create new CATs, and interact with existing CATs.
 
 ## Features
 
@@ -13,17 +12,26 @@ Clowder is a decentralized application (dApp) for creating and managing CAT (Cus
 ## Installation
 
 1. Clone the repository:
+
    ```sh
    git clone https://github.com/yourusername/clowder.git
    cd clowder
 
+   ```
+
 2. Install dependencies:
-   ```sh 
+
+   ```sh
     npm install
 
+   ```
+
 3. Start the development server:
-    ```sh
-    npm run dev
+
+   ```sh
+   npm run dev
+
+   ```
 
 4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
