@@ -24,33 +24,33 @@ const bebasNueue = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Clowder - Contribution Accounting Tokens (CATs)",
+  title: "TNTs - Trust Network Token",
   description:
-    "Clowder helps you track contributions to your projects with Contribution Accounting Tokens (CATs). Secure, semi-transferable, and easy to mint.",
+    "TNT helps you track contributions to your projects with Contribution Accounting Tokens (CATs). Secure, semi-transferable, and easy to mint.",
   keywords:
-    "Clowder, Contribution Accounting Tokens, CATs, secure, mint tokens, projects, community, Stability Nexus",
+    "TNT, Contribution Accounting Tokens, CATs, secure, mint tokens, projects, community, Stability Nexus",
   robots: "index, follow",
   openGraph: {
     type: "website",
     url: "https://clowder.stability.nexus/",
-    title: "Clowder - Contribution Accounting Tokens (CATs)",
+    title: "TNT - Contribution Accounting Tokens (CATs)",
     description:
-      "Track contributions to your projects with Contribution Accounting Tokens (CATs) on Clowder. Simple to mint, secure against inflation.",
+      "Track contributions to your projects with Contribution Accounting Tokens (CATs) on TNT. Simple to mint, secure against inflation.",
     images: [
       {
         url: "https://stability.nexus/logos/clowder.png",
         width: 1200,
         height: 630,
-        alt: "Clowder Logo",
+        alt: "TNT Logo",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     site: "@StabilityNexus",
-    title: "Clowder - Contribution Accounting Tokens (CATs)",
+    title: "TNT - Contribution Accounting Tokens (CATs)",
     description:
-      "Track contributions to your projects using Contribution Accounting Tokens (CATs) on Clowder. Simple to mint, secure against inflation.",
+      "Track contributions to your projects using Contribution Accounting Tokens (CATs) on TNT. Simple to mint, secure against inflation.",
   },
 };
 

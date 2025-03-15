@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title TNT
- * @dev A trust-based non-transferable token contract with optional revocation support.
+ * @dev A trust-based non-transferable token contract with optional revocation support. 
  */
 contract TNT is ERC721, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
