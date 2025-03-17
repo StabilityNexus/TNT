@@ -108,4 +108,16 @@ describe("TNT and Factory Contracts", function () {
         expect(ownerDeployedTNTs).to.include(tntAddress);
         expect(ownerDeployedTNTs).to.include(nonRevokableTntAddress);
     });
+
+    it("should correctly update issued token mapping", async function () {
+        await tnt.grantMinterRole(addr1.address);
+        await tnt.connect(addr1).issueToken(addr2.address);
+        
+        const tokenId = 0;
+        const tokenOwner = await tnt.ownerOf(tokenId);
+        const tokenIssuer = await tnt.tokenIssuers(tokenId);
+    
+        expect(tokenOwner).to.equal(addr2.address);
+        expect(tokenIssuer).to.equal(addr1.address);
+    });
 });

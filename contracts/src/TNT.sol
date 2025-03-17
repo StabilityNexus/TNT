@@ -4,10 +4,17 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
+/**
+ * @title IFactory
+ * @dev Interface for the Factory contract to register issued TNTs.
+ */
+interface IFactory {
+    function registerIssuedToken(address user, address tntAddress) external;
+}
 
 /**
  * @title TNT
- * @dev A trust-based non-transferable token contract with optional revocation support. 
+ * @dev A trust-based non-transferable token contract with optional revocation support.
  */
 contract TNT is ERC721, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -15,7 +22,9 @@ contract TNT is ERC721, AccessControl {
 
     uint256 private _nextTokenId;
     mapping(uint256 => address) public tokenIssuers;
+    mapping(address => uint256[]) private _tokensByRecipient;
     bool public immutable revokable;
+    address public factoryContract;
 
     /**
      * @dev Struct to store metadata related to a token.
@@ -38,17 +47,20 @@ contract TNT is ERC721, AccessControl {
      * @param name The name of the token.
      * @param symbol The symbol of the token.
      * @param _revokable Boolean indicating if the token can be revoked.
+     * @param _factoryContract Address of the factory contract.
      */
     constructor(
         address admin,
         string memory name,
         string memory symbol,
-        bool _revokable
+        bool _revokable,
+        address _factoryContract
     ) ERC721(name, symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MINTER_ROLE, admin);
         _grantRole(REVOKER_ROLE, admin);
         revokable = _revokable;
+        factoryContract = _factoryContract;
     }
 
     /**
@@ -60,6 +72,11 @@ contract TNT is ERC721, AccessControl {
         _safeMint(recipient, tokenId);
         tokenIssuers[tokenId] = msg.sender;
         metadata[tokenId] = TokenMetadata(block.timestamp);
+        _tokensByRecipient[recipient].push(tokenId);
+
+        // Notify the factory contract about the issued token
+        IFactory(factoryContract).registerIssuedToken(recipient, address(this));
+
         emit TokenIssued(msg.sender, recipient, tokenId);
     }
 
@@ -84,13 +101,26 @@ contract TNT is ERC721, AccessControl {
     }
 
     /**
+     * @dev Returns the list of tokens issued to a recipient and their issuers.
+     * @param user The address of the user.
+     * @return tokenIds The list of token IDs issued to the user.
+     * @return issuers The list of addresses that issued each token.
+     */
+    function getIssuedTokens(address user) public view returns (uint256[] memory tokenIds, address[] memory issuers) {
+        uint256 length = _tokensByRecipient[user].length;
+        tokenIds = new uint256[](length);
+        issuers = new address[](length);
+
+        for (uint256 i = 0; i < length; i++) {
+            tokenIds[i] = _tokensByRecipient[user][i];
+            issuers[i] = tokenIssuers[tokenIds[i]];
+        }
+    }
+
+    /**
      * @dev Hook that is called before any token transfer.
      * It prevents all transfers except for minting and burning.
-     * @param to The address of the recipient.
-     * @param tokenId The ID of the token being transferred.
      */
-    
-
     function _update(address to, uint256 tokenId, address auth) 
     internal 
     override 
@@ -98,7 +128,6 @@ contract TNT is ERC721, AccessControl {
     {
         address from = super._update(to, tokenId, auth);
 
-        // Block only regular transfers (not minting or burning)
         if (from != address(0) && to != address(0)) {
             revert("TNTs are non-transferable");
         }
@@ -124,8 +153,6 @@ contract TNT is ERC721, AccessControl {
 
     /**
      * @dev Overrides supportsInterface to include AccessControl and ERC721 support.
-     * @param interfaceId The interface ID to check.
-     * @return Whether the interface is supported.
      */
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
