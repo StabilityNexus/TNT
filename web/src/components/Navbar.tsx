@@ -1,150 +1,111 @@
 "use client";
 
-import Link from "next/link";
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import logo_light from "../images/elem-light.svg";
-import logo_dark from "../images/elem-dark.svg";
-import { useTheme } from "next-themes";
-import { ModeToggle } from "../components/darkModeToggle";
-import Avatar from "./Avatar";
-// import { useWallet } from "@/hooks/WalletConnectProvider";
+import { useState, useEffect } from "react";
+import TNT from "@/components/icons/TNT.svg";
+import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
+import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount } from "wagmi";
 
-const Navbar = () => {
-  const { address } = useAccount();
-  const { resolvedTheme } = useTheme();
-  const [isThemeReady, setIsThemeReady] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+const navLinks = [
+  { name: "Home", href: "#hero" },
+  { name: "How It Works", href: "#how-it-works" },
+  { name: "Features", href: "#features" },
+  { name: "Get Started", href: "#cta" },
+];
+
+export function Navbar() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (resolvedTheme) {
-      setIsThemeReady(true);
-    }
-  }, [resolvedTheme]);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
 
-  if (!isThemeReady) return null;
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToSection = (href: string) => {
+    setIsMobileMenuOpen(false);
+    const element = document.querySelector(href);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
-    <header className="p-5 bg-[#9deef7] dark:bg-[#08131e]">
-      <div className="mx-auto flex items-center justify-end relative">
-        {/* Logo and Text */}
-        <div>
-          <Link href="/">
-            <div className="absolute ml-[-12px] flex items-baseline left-0 top-1/2 transform -translate-y-1/2 mt-2 mb-2">
-              <Image
-                className="mt-2"
-                src={resolvedTheme === "dark" ? logo_dark : logo_light}
-                alt="TNT"
-                width={70}
-                height={70}
-                priority
-              />
-              <div className="">
-                <h1
-                  className="text-7xl text-purple-700 font-bold ml-[10px] pb-2 dark:text-[#BA9901]"
-                  style={{
-                    fontFamily: "var(--font-bebas-nueue)",
-                    marginLeft: "8px",
-                  }}
-                >
-                  TNT
-                </h1>
-              </div>
-            </div>
-          </Link>
+    <header
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4 px-4 md:px-8",
+        isScrolled
+          ? "bg-black/80 backdrop-blur-md border-b border-slate-800/50 shadow-lg"
+          : "bg-transparent"
+      )}
+    >
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="flex items-center">
+          <Image src={TNT} alt="TNT Logo" className="h-7 w-7" />
+          <span className="ml-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-amber-300">
+            TNT
+          </span>
         </div>
 
-        {/* Hamburger Menu and ModeToggle for Small Screens */}
-        <div className="flex items-center space-x-4 md:hidden">
-          <button className="z-20" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? (
-              <X className="w-8 h-8" />
-            ) : (
-              <Menu className="w-8 h-8" />
-            )}
-          </button>
-          <ModeToggle />
-        </div>
-
-        {/* Mobile Navigation Links */}
-        {isMenuOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 z-10 flex items-center justify-center">
-            <nav className="bg-white dark:bg-gray-800 p-8 rounded-lg w-4/5 max-w-md shadow-lg relative">
-              <button
-                onClick={() => setIsMenuOpen(false)}
-                className="absolute top-4 right-4 hover:bg-gray-300 dark:hover:bg-gray-600 text-black dark:text-white font-bold py-2 px-4 rounded"
-              >
-                <X className="w-8 h-8" />
-              </button>
-              <ul
-                className="flex flex-col space-y-4 text-2xl font-semibold text-center"
-                style={{ fontFamily: "var(--font-bebas-nueue)" }}
-              >
-                {address && (
-                  <li>
-                    <Link href="/my-tnts">
-                      <Avatar />
-                    </Link>
-                  </li>
-                )}
-                <li>
-                  <ConnectButton />
-                </li>
-                <li>
-                  <Link
-                    href="/create"
-                    className="block py-2 hover:text-[#6A0DAD]"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    CREATE TNT
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/#Contact"
-                    className="block py-2 hover:text-[#6A0DAD]"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    ABOUT US
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        )}
-
-        {/* Desktop Navigation Links */}
-        <nav
-          className="hidden md:flex relative space-x-8 text-2xl font-semibold text-center items-center"
-          style={{ fontFamily: "var(--font-bebas-nueue)" }}
-        >
-          {address && (
-            <Link href="/my-tnts">
-              <Avatar />
-            </Link>
-          )}
-          <Link href="/create" className="hover:text-[#6A0DAD]">
-            CREATE TNT
-          </Link>
-          <Link href="/#Contact" className="hover:text-[#6A0DAD]">
-            ABOUT US
-          </Link>
-          {/* Connect Wallet and Light/Dark Toggle for Desktop */}
-          <div className="hidden md:flex items-center space-x-4 ml-8">
-            <ModeToggle />
-          </div>
-          <div className="text-sm">
-            <ConnectButton />
-          </div>
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-8">
+          {navLinks.map((link) => (
+            <button
+              key={link.name}
+              onClick={() => scrollToSection(link.href)}
+              className="text-slate-300 hover:text-white transition-colors duration-200"
+            >
+              {link.name}
+            </button>
+          ))}
+          {/* <Button
+            onClick={() => scrollToSection("#cta")}
+            className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white"
+          >
+            Connect Wallet
+          </Button> */}
+          <ConnectButton />
         </nav>
 
-        {/* <ConnectButton/> */}
+        {/* Mobile Navigation Toggle */}
+        <button
+          className="md:hidden text-white p-2"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-md border-b border-slate-800/50 shadow-lg py-4">
+          <nav className="flex flex-col items-center space-y-4 px-4">
+            {navLinks.map((link) => (
+              <button
+                key={link.name}
+                onClick={() => scrollToSection(link.href)}
+                className="text-slate-300 hover:text-white transition-colors duration-200 py-2"
+              >
+                {link.name}
+              </button>
+            ))}
+            {/* <Button
+              onClick={() => scrollToSection("#cta")}
+              className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white w-full"
+            >
+              Connect Wallet
+            </Button> */}
+            <div className="w-full flex justify-center">
+              <ConnectButton />
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   );
-};
-
-export default Navbar;
+}

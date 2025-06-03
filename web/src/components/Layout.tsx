@@ -2,8 +2,8 @@ import "@rainbow-me/rainbowkit/styles.css";
 import { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "../hooks/ThemeProvider";
-import Navbar from "./Navbar";
-import Footer from "@/components/Footer";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { WalletProvider } from "../hooks/WalletProvider";
 
 const inter = Inter({ subsets: ["latin"] });

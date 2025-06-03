@@ -17,7 +17,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         <RainbowKitProvider
           initialChain={scrollSepolia}
           theme={darkTheme({
-            accentColor: "hsl(var(--primary))",
+            accentColor: "#4f1e75",
             accentColorForeground: "white",
             borderRadius: "medium",
             overlayBlur: "small",
