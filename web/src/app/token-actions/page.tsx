@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
 import { useAccount } from "wagmi";
 import { writeContract } from "@wagmi/core";
 import { TNTAbi } from "@/contractsABI/TNT";
@@ -114,98 +113,96 @@ export default function TokenActionsPage() {
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto py-8">
-        <h1 className="text-4xl font-extrabold text-center mb-8">
-          Token Actions
-        </h1>
-        <p className="text-center mb-4">
-          Manage your TNT tokens: Issue, Revoke, or Burn tokens.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Issue Token */}
-          <div className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-xl p-6 shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Issue Token</h2>
-            <form onSubmit={handleIssueToken} className="space-y-4">
-              <label className="block">
-                <span className="font-semibold">Recipient Address</span>
-                <input
-                  type="text"
-                  value={issueRecipient}
-                  onChange={(e) => setIssueRecipient(e.target.value)}
-                  placeholder="0x..."
-                  className="mt-1 block w-full p-2 border rounded"
-                  required
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={isIssuing}
-                className="w-full py-2 px-4 bg-green-400 text-white rounded hover:bg-green-700 transition"
-              >
-                {isIssuing ? "Issuing..." : "Issue Token"}
-              </button>
-            </form>
-          </div>
-
-          {/* Revoke Token */}
-          <div className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-xl p-6 shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Revoke Token</h2>
-            <form onSubmit={handleRevokeToken} className="space-y-4">
-              <label className="block">
-                <span className="font-semibold">Token ID</span>
-                <input
-                  type="number"
-                  value={revokeTokenId}
-                  onChange={(e) => setRevokeTokenId(e.target.value)}
-                  placeholder="Token ID"
-                  className="mt-1 block w-full p-2 border rounded"
-                  required
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={isRevoking}
-                className="w-full py-2 px-4 bg-yellow-300 text-white rounded hover:bg-yellow-700 transition"
-              >
-                {isRevoking ? "Revoking..." : "Revoke Token"}
-              </button>
-            </form>
-          </div>
-
-          {/* Burn Token */}
-          <div className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-xl p-6 shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Burn Token</h2>
-            <form onSubmit={handleBurnToken} className="space-y-4">
-              <label className="block">
-                <span className="font-semibold">Token ID</span>
-                <input
-                  type="number"
-                  value={burnTokenId}
-                  onChange={(e) => setBurnTokenId(e.target.value)}
-                  placeholder="Token ID"
-                  className="mt-1 block w-full p-2 border rounded"
-                  required
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={isBurning}
-                className="w-full py-2 px-4 bg-red-500 text-white rounded hover:bg-red-700 transition"
-              >
-                {isBurning ? "Burning..." : "Burn Token"}
-              </button>
-            </form>
-          </div>
+    <div className="container mx-auto py-8">
+      <h1 className="text-4xl font-extrabold text-center mb-8">
+        Token Actions
+      </h1>
+      <p className="text-center mb-4">
+        Manage your TNT tokens: Issue, Revoke, or Burn tokens.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Issue Token */}
+        <div className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-xl p-6 shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Issue Token</h2>
+          <form onSubmit={handleIssueToken} className="space-y-4">
+            <label className="block">
+              <span className="font-semibold">Recipient Address</span>
+              <input
+                type="text"
+                value={issueRecipient}
+                onChange={(e) => setIssueRecipient(e.target.value)}
+                placeholder="0x..."
+                className="mt-1 block w-full p-2 border rounded"
+                required
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={isIssuing}
+              className="w-full py-2 px-4 bg-green-400 text-white rounded hover:bg-green-700 transition"
+            >
+              {isIssuing ? "Issuing..." : "Issue Token"}
+            </button>
+          </form>
         </div>
-        <div className="mt-8 text-center">
-          <Link href="/">
-            <span className="text-blue-600 hover:underline cursor-pointer">
-              Back to Home
-            </span>
-          </Link>
+
+        {/* Revoke Token */}
+        <div className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-xl p-6 shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Revoke Token</h2>
+          <form onSubmit={handleRevokeToken} className="space-y-4">
+            <label className="block">
+              <span className="font-semibold">Token ID</span>
+              <input
+                type="number"
+                value={revokeTokenId}
+                onChange={(e) => setRevokeTokenId(e.target.value)}
+                placeholder="Token ID"
+                className="mt-1 block w-full p-2 border rounded"
+                required
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={isRevoking}
+              className="w-full py-2 px-4 bg-yellow-300 text-white rounded hover:bg-yellow-700 transition"
+            >
+              {isRevoking ? "Revoking..." : "Revoke Token"}
+            </button>
+          </form>
+        </div>
+
+        {/* Burn Token */}
+        <div className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-xl p-6 shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Burn Token</h2>
+          <form onSubmit={handleBurnToken} className="space-y-4">
+            <label className="block">
+              <span className="font-semibold">Token ID</span>
+              <input
+                type="number"
+                value={burnTokenId}
+                onChange={(e) => setBurnTokenId(e.target.value)}
+                placeholder="Token ID"
+                className="mt-1 block w-full p-2 border rounded"
+                required
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={isBurning}
+              className="w-full py-2 px-4 bg-red-500 text-white rounded hover:bg-red-700 transition"
+            >
+              {isBurning ? "Burning..." : "Burn Token"}
+            </button>
+          </form>
         </div>
       </div>
-    </Layout>
+      <div className="mt-8 text-center">
+        <Link href="/">
+          <span className="text-blue-600 hover:underline cursor-pointer">
+            Back to Home
+          </span>
+        </Link>
+      </div>
+    </div>
   );
 }

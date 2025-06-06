@@ -6,6 +6,7 @@ import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { scrollSepolia } from "wagmi/chains";
+import { Navbar } from "@/components/Navbar";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             overlayBlur: "small",
           })}
         >
+          <Navbar />
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>

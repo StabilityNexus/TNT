@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 const navLinks = [
   { name: "Home", href: "#hero" },
   { name: "How It Works", href: "#how-it-works" },
@@ -17,6 +18,8 @@ const navLinks = [
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const isLandingPage = pathname === "/";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,29 +49,26 @@ export function Navbar() {
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center">
-          <Image src={TNT} alt="TNT Logo" className="h-7 w-7" />
-          <span className="ml-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-amber-300">
-            TNT
-          </span>
+          <Link href="/" className="flex items-center">
+            <Image src={TNT} alt="TNT Logo" className="h-7 w-7" />
+            <span className="ml-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-amber-300">
+              TNT
+            </span>
+          </Link>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          {navLinks.map((link) => (
-            <button
-              key={link.name}
-              onClick={() => scrollToSection(link.href)}
-              className="text-slate-300 hover:text-white transition-colors duration-200"
-            >
-              {link.name}
-            </button>
-          ))}
-          {/* <Button
-            onClick={() => scrollToSection("#cta")}
-            className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white"
-          >
-            Connect Wallet
-          </Button> */}
+          {isLandingPage &&
+            navLinks.map((link) => (
+              <button
+                key={link.name}
+                onClick={() => scrollToSection(link.href)}
+                className="text-slate-300 hover:text-white transition-colors duration-200"
+              >
+                {link.name}
+              </button>
+            ))}
           <ConnectButton />
         </nav>
 
@@ -85,21 +85,16 @@ export function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-md border-b border-slate-800/50 shadow-lg py-4">
           <nav className="flex flex-col items-center space-y-4 px-4">
-            {navLinks.map((link) => (
-              <button
-                key={link.name}
-                onClick={() => scrollToSection(link.href)}
-                className="text-slate-300 hover:text-white transition-colors duration-200 py-2"
-              >
-                {link.name}
-              </button>
-            ))}
-            {/* <Button
-              onClick={() => scrollToSection("#cta")}
-              className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white w-full"
-            >
-              Connect Wallet
-            </Button> */}
+            {isLandingPage &&
+              navLinks.map((link) => (
+                <button
+                  key={link.name}
+                  onClick={() => scrollToSection(link.href)}
+                  className="text-slate-300 hover:text-white transition-colors duration-200 py-2"
+                >
+                  {link.name}
+                </button>
+              ))}
             <div className="w-full flex justify-center">
               <ConnectButton />
             </div>

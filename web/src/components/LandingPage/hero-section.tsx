@@ -29,7 +29,6 @@ export function HeroSection() {
       id="hero"
       className={`min-h-screen pt-24 pb-12 px-4 flex items-center relative overflow-hidden`}
     >
-      {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 -left-20 w-72 h-72 bg-purple-700/30 rounded-full filter blur-3xl" />
         <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-amber-500/20 rounded-full filter blur-3xl" />
