@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Layout from "@/components/Layout";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { TNTVaultFactories } from "@/utils/address";
@@ -130,57 +129,54 @@ export default function MyTNTsPage() {
   }, [address]);
 
   return (
-    <Layout>
-      <div className="w-full">
-        <div className="container mx-auto py-8 mt-9 justify-center text-center">
-          <h1 className="text-4xl font-extrabold text-[#6A0DAD] dark:text-[#FFC947] mb-6">
-            My TNTs
-          </h1>
-          {isLoading ? (
-            <p>Loading your TNTs...</p>
-          ) : error ? (
-            <p className="text-red-500">{error}</p>
-          ) : ownedTNTs?.length ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {ownedTNTs.map((tnt) => (
-                <div
-                  key={`${tnt.chainId}-${tnt.address}`}
-                  className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
-                >
-                  <h3 className="text-xl font-extrabold text-[#3E3E3E] dark:text-white transition duration-200">
-                    <Link
-                      href={`/c?vault=${tnt.address}&chainId=${tnt.chainId}`}
-                      className="hover:underline"
-                    >
-                      {tnt.tokenName || tnt.address}
-                    </Link>
-                  </h3>
-                  <p className="text-sm text-[#3E3E3E] dark:text-indigo-200 mt-2">
-                    Symbol:{" "}
-                    <span className="font-semibold">{tnt.tokenSymbol}</span>
-                  </p>
-                  <p className="text-sm text-[#3E3E3E] dark:text-indigo-200">
-                    Chain ID:{" "}
-                    <span className="font-semibold">{tnt.chainId}</span>
-                  </p>
+    <div className="w-full">
+      <div className="container mx-auto py-8 mt-9 justify-center text-center">
+        <h1 className="text-4xl font-extrabold text-[#6A0DAD] dark:text-[#FFC947] mb-6">
+          My TNTs
+        </h1>
+        {isLoading ? (
+          <p>Loading your TNTs...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : ownedTNTs?.length ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {ownedTNTs.map((tnt) => (
+              <div
+                key={`${tnt.chainId}-${tnt.address}`}
+                className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
+              >
+                <h3 className="text-xl font-extrabold text-[#3E3E3E] dark:text-white transition duration-200">
                   <Link
-                    href={`/t?vault=${tnt.address}&chainId=${tnt.chainId}`}
-                    className="inline-block mt-4 text-[#6A0DAD] dark:text-[#FFC947] font-semibold hover:underline transition duration-200"
+                    href={`/c?vault=${tnt.address}&chainId=${tnt.chainId}`}
+                    className="hover:underline"
                   >
-                    View Details
+                    {tnt.tokenName || tnt.address}
                   </Link>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-lg font-semibold text-gray-600 dark:text-indigo-300 mt-4">
-              You don't own any{" "}
-              <span className="text-[#6A0DAD] dark:text-[#FFC947]">TNTs</span>{" "}
-              yet. Start exploring and mint your first one!
-            </p>
-          )}
-        </div>
+                </h3>
+                <p className="text-sm text-[#3E3E3E] dark:text-indigo-200 mt-2">
+                  Symbol:{" "}
+                  <span className="font-semibold">{tnt.tokenSymbol}</span>
+                </p>
+                <p className="text-sm text-[#3E3E3E] dark:text-indigo-200">
+                  Chain ID: <span className="font-semibold">{tnt.chainId}</span>
+                </p>
+                <Link
+                  href={`/t?vault=${tnt.address}&chainId=${tnt.chainId}`}
+                  className="inline-block mt-4 text-[#6A0DAD] dark:text-[#FFC947] font-semibold hover:underline transition duration-200"
+                >
+                  View Details
+                </Link>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-lg font-semibold text-gray-600 dark:text-indigo-300 mt-4">
+            You don't own any{" "}
+            <span className="text-[#6A0DAD] dark:text-[#FFC947]">TNTs</span>{" "}
+            yet. Start exploring and mint your first one!
+          </p>
+        )}
       </div>
-    </Layout>
+    </div>
   );
 }

@@ -6,6 +6,9 @@
 .pnp.js
 .yarn/install-state.gz
 
+# env files (can opt-in for committing if needed)
+.env*
+
 # testing
 /coverage
 

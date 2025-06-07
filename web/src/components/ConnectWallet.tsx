@@ -5,7 +5,6 @@ import { useWallet } from "@/hooks/WalletConnectProvider";
 const ConnectWallet = () => {
   const { connect, disconnect, address } = useWallet();
 
-
   return (
     <div>
       {address ? (
@@ -16,12 +15,9 @@ const ConnectWallet = () => {
           <Button onClick={disconnect} className="mb-2 md:mb-0">
             Disconnect Wallet
           </Button>
-      </div>
+        </div>
       ) : (
-        <Button
-          onClick={connect}
-          className="custom-button font-medium"
-        >
+        <Button onClick={connect} className="custom-button font-medium">
           Connect Wallet
         </Button>
       )}

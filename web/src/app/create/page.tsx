@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,9 +12,6 @@ import { useAccount } from "wagmi";
 import { config } from "@/utils/config";
 import { writeContract } from "@wagmi/core";
 import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
-import logo_light from "../../images/elem-dark.svg";
-import logo_dark from "../../images/elem-light.svg";
-import Image from "next/image";
 import { Info } from "lucide-react";
 import { lightTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { useTheme } from "next-themes";
@@ -127,101 +123,97 @@ export default function CreateTNT() {
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen flex items-center justify-center py-12 px-4 relative">
-        <div className="max-w-3xl w-full flex bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-l-3xl shadow-[#09090b] shadow-2xl">
-          <div className="p-8">
-            <div className="mb-10">
-              <p className="text-3xl mt-5 text-[#3E3E3E] dark:text-white transition duration-200 pr-8">
-                Create Your{" "}
-                <span className="text-[#6A0DAD] font-semibold dark:font-normal dark:text-[#FFC947] font-mono">
-                  Trust Network Token
-                </span>{" "}
-              </p>
-            </div>
-            {!address ? (
-              <div className="flex flex-col items-center space-y-4">
-                <p className="text-lg text-white hover:text-[#FFC947] transition duration-200">
-                  Connect your wallet to get started.
-                </p>
-                <div className="flex justify-center">
-                  <RainbowKitProvider
-                    theme={lightTheme({
-                      accentColor: "#FFC947",
-                      accentColorForeground: "#000000",
-                      borderRadius: "large",
-                    })}
-                  >
-                    <ConnectButton />
-                  </RainbowKitProvider>
-                </div>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit}
-                className="text-indigo-200 font-medium flex flex-wrap gap-12"
-              >
-                {fields.map(({ id, label, type, placeholder, description }) => (
-                  <div key={id} className="space-y-3 w-[45%]">
-                    <div className="flex items-center justify-between">
-                      <Label
-                        htmlFor={id}
-                        className="block text-sm font-semibold text-[#3E3E3E] dark:text-white hover:text-white transition duration-200"
-                      >
-                        {label}
-                      </Label>
-                      <div className="group relative">
-                        <Info className="h-5 w-5 text-indigo-400 cursor-pointer hover:text-white transition duration-200" />
-                        <span className="absolute left-1/2 -top-7 -translate-x-1/2 px-2 py-1 rounded bg-black text-xs text-white opacity-0 group-hover:opacity-100">
-                          {description}
-                        </span>
-                      </div>
-                    </div>
-                    <Input
-                      id={id}
-                      name={id}
-                      type={type}
-                      placeholder={placeholder}
-                      required
-                      value={
-                        formData[id as keyof DeployContractProps] as string
-                      }
-                      onChange={handleChange}
-                      className="w-full bg-[#C3F3FB] dark:bg-[#363E62] text-[#3E3E3E] border border-[#6c6c6c] dark:text-indigo-200 p-6 rounded-2xl"
-                    />
-                  </div>
-                ))}
-                <div className="w-full">
-                  <Label
-                    htmlFor="revokable"
-                    className="block text-sm font-semibold text-[#3E3E3E] dark:text-white hover:text-white transition duration-200"
-                  >
-                    Revokable
-                  </Label>
-                  <Input
-                    id="revokable"
-                    name="revokable"
-                    type="checkbox"
-                    checked={formData.revokable}
-                    onChange={handleChange}
-                    className="w-6 h-6"
-                  />
-                  <p className="text-xs text-[#3E3E3E] dark:text-indigo-200 mt-1">
-                    If checked, the token will be revokable.
-                  </p>
-                </div>
-                <Button
-                  type="submit"
-                  className="py-3 bg-[#20253a] rounded-xl w-[90%] text-white font-bold text-lg hover:scale-105 hover:shadow-lg transition-all duration-500 border-none p-8"
-                  disabled={isDeploying}
-                >
-                  {isDeploying ? "Deploying..." : "Deploy TNT Contract"}
-                </Button>
-              </form>
-            )}
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 relative">
+      <div className="max-w-3xl w-full flex bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-l-3xl shadow-[#09090b] shadow-2xl">
+        <div className="p-8">
+          <div className="mb-10">
+            <p className="text-3xl mt-5 text-[#3E3E3E] dark:text-white transition duration-200 pr-8">
+              Create Your{" "}
+              <span className="text-[#6A0DAD] font-semibold dark:font-normal dark:text-[#FFC947] font-mono">
+                Trust Network Token
+              </span>{" "}
+            </p>
           </div>
+          {!address ? (
+            <div className="flex flex-col items-center space-y-4">
+              <p className="text-lg text-white hover:text-[#FFC947] transition duration-200">
+                Connect your wallet to get started.
+              </p>
+              <div className="flex justify-center">
+                <RainbowKitProvider
+                  theme={lightTheme({
+                    accentColor: "#FFC947",
+                    accentColorForeground: "#000000",
+                    borderRadius: "large",
+                  })}
+                >
+                  <ConnectButton />
+                </RainbowKitProvider>
+              </div>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="text-indigo-200 font-medium flex flex-wrap gap-12"
+            >
+              {fields.map(({ id, label, type, placeholder, description }) => (
+                <div key={id} className="space-y-3 w-[45%]">
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor={id}
+                      className="block text-sm font-semibold text-[#3E3E3E] dark:text-white hover:text-white transition duration-200"
+                    >
+                      {label}
+                    </Label>
+                    <div className="group relative">
+                      <Info className="h-5 w-5 text-indigo-400 cursor-pointer hover:text-white transition duration-200" />
+                      <span className="absolute left-1/2 -top-7 -translate-x-1/2 px-2 py-1 rounded bg-black text-xs text-white opacity-0 group-hover:opacity-100">
+                        {description}
+                      </span>
+                    </div>
+                  </div>
+                  <Input
+                    id={id}
+                    name={id}
+                    type={type}
+                    placeholder={placeholder}
+                    required
+                    value={formData[id as keyof DeployContractProps] as string}
+                    onChange={handleChange}
+                    className="w-full bg-[#C3F3FB] dark:bg-[#363E62] text-[#3E3E3E] border border-[#6c6c6c] dark:text-indigo-200 p-6 rounded-2xl"
+                  />
+                </div>
+              ))}
+              <div className="w-full">
+                <Label
+                  htmlFor="revokable"
+                  className="block text-sm font-semibold text-[#3E3E3E] dark:text-white hover:text-white transition duration-200"
+                >
+                  Revokable
+                </Label>
+                <Input
+                  id="revokable"
+                  name="revokable"
+                  type="checkbox"
+                  checked={formData.revokable}
+                  onChange={handleChange}
+                  className="w-6 h-6"
+                />
+                <p className="text-xs text-[#3E3E3E] dark:text-indigo-200 mt-1">
+                  If checked, the token will be revokable.
+                </p>
+              </div>
+              <Button
+                type="submit"
+                className="py-3 bg-[#20253a] rounded-xl w-[90%] text-white font-bold text-lg hover:scale-105 hover:shadow-lg transition-all duration-500 border-none p-8"
+                disabled={isDeploying}
+              >
+                {isDeploying ? "Deploying..." : "Deploy TNT Contract"}
+              </Button>
+            </form>
+          )}
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }

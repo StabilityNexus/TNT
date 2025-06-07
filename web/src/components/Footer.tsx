@@ -1,74 +1,94 @@
-import {
-  faGithub,
-  faDiscord,
-  faTelegram,
-  faTwitter,
-} from "@fortawesome/free-brands-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Image from "next/image";
-import Link from "next/link";
-import logo from "../images/logo.png";
+import React from "react";
+import { Github } from "lucide-react";
 
-const contact_links = [
-  { href: "https://github.com/StabilityNexus", icon: faGithub },
-  { href: "https://discord.gg/YzDKeEfWtS", icon: faDiscord },
-  { href: "https://t.me/StabilityNexus", icon: faTelegram },
-  { href: "https://x.com/StabilityNexus", icon: faTwitter },
-];
-
-export default function Footer() {
+export const Footer = () => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="flex-1">
-        {/* Main content goes here */}
-        {/* Your page content */}
-      </div>
-      <footer className="w-full px-24 py-10 space-y-4 bg-[#9deef7] dark:bg-[#08131e] text-black dark:text-white mt-auto">
-        <div className="flex items-center justify-between">
-          {/* Logo Section */}
-          <div className="flex items-center">
-            <Link
-              href="https://stability.nexus/"
-              target="_blank"
-              className="cursor-pointer"
-            >
-              <Image
-                unoptimized
-                fetchPriority="high"
-                loading="lazy"
-                src={logo}
-                alt="Stability Nexus Logo"
-                height={50}
-                width={50}
-              />
-            </Link>
+    <footer id="footer" className="bg-black text-gray-400 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <div className="text-center sm:text-left">
+            <h2 className="text-white text-lg font-semibold mb-4">About Us</h2>
+            <p className="mb-4">
+              TNT was developed by The Stable Order within the Stability Nexus.
+            </p>
           </div>
 
-          {/* Text Section */}
-          <div
-            className="text-center text-base md:text-lg font-medium"
-            style={{ fontFamily: "var(--font-bebas-nueue)" }}
-          >
-            <span className="mr-1">&copy;</span>
-            The Stable Order. All rights reserved.
-          </div>
-
-          {/* Social Links Section */}
-          <div className="flex items-center space-x-4">
-            {contact_links.map(({ href, icon }, index) => (
+          <div className="text-center sm:text-right">
+            <h2 className="text-white text-lg font-semibold mb-4">Follow Us</h2>
+            <div className="flex justify-center sm:justify-end gap-6">
+              {/* Github */}
               <a
-                key={index}
-                href={href}
+                href="https://github.com/StabilityNexus"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-2xl md:text-3xl hover:text-[#6A0DAD] transition-colors duration-200"
+                className="hover:text-white transition-colors duration-300"
               >
-                <FontAwesomeIcon icon={icon} />
+                <Github size={24} />
               </a>
-            ))}
+
+              {/* X (Twitter) */}
+              <a
+                href="https://x.com/StabilityNexus"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors duration-300"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+
+              {/* Discord */}
+              <a
+                href="https://discord.gg/z65e898Kpe"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors duration-300"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02z" />
+                </svg>
+              </a>
+
+              {/* Telegram */}
+              <a
+                href="https://t.me/StabilityNexus"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors duration-300"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42l10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701l-.332 4.865c.487 0 .703-.22.975-.48l2.34-2.355l4.964 3.557c.917.508 1.575.247 1.804-.85l3.274-15.424c.338-1.297-.5-1.884-1.418-1.482z" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
-      </footer>
-    </div>
+
+        {/* Copyright */}
+        <p className="text-center text-xs pt-8 border-t border-gray-800 mt-8">
+          © 2025 THE STABLE ORDER. All rights reserved.
+        </p>
+      </div>
+    </footer>
   );
-}
+};
