@@ -129,10 +129,12 @@ export default function CreateTNT() {
       </div>
 
       <div className="max-w-2xl w-full z-10">
-        <div className="text-center mb-8 mt-8">
+        <div className="text-center mb-8 mt-12">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
             Create Your{" "}
-            <span className="text-amber-500">Trust Network Token</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-600">
+              Trust Network Token
+            </span>
           </h1>
           <p className="text-slate-400">
             Deploy a new TNT to establish trust relationships on the blockchain
