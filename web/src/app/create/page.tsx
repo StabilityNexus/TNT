@@ -13,7 +13,6 @@ import { config } from "@/utils/config";
 import { writeContract } from "@wagmi/core";
 import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
 import { Info } from "lucide-react";
-import { lightTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { useTheme } from "next-themes";
 
 interface DeployContractProps {
@@ -121,95 +120,106 @@ export default function CreateTNT() {
     e.preventDefault();
     await deployContract();
   };
-
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 relative">
-      <div className="max-w-3xl w-full flex bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-l-3xl shadow-[#09090b] shadow-2xl">
-        <div className="p-8">
-          <div className="mb-10">
-            <p className="text-3xl mt-5 text-[#3E3E3E] dark:text-white transition duration-200 pr-8">
-              Create Your{" "}
-              <span className="text-[#6A0DAD] font-semibold dark:font-normal dark:text-[#FFC947] font-mono">
-                Trust Network Token
-              </span>{" "}
-            </p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative bg-black text-white">
+      {/* Background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 -left-20 w-72 h-72 bg-purple-700/20 rounded-full filter blur-3xl" />
+        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-amber-500/10 rounded-full filter blur-3xl" />
+      </div>
+
+      <div className="max-w-2xl w-full z-10">
+        <div className="text-center mb-8 mt-8">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            Create Your{" "}
+            <span className="text-amber-500">Trust Network Token</span>
+          </h1>
+          <p className="text-slate-400">
+            Deploy a new TNT to establish trust relationships on the blockchain
+          </p>
+        </div>
+
+        <div className="bg-slate-900/70 backdrop-blur-sm border border-slate-800/50 rounded-2xl shadow-xl overflow-hidden">
           {!address ? (
-            <div className="flex flex-col items-center space-y-4">
-              <p className="text-lg text-white hover:text-[#FFC947] transition duration-200">
-                Connect your wallet to get started.
-              </p>
-              <div className="flex justify-center">
-                <RainbowKitProvider
-                  theme={lightTheme({
-                    accentColor: "#FFC947",
-                    accentColorForeground: "#000000",
-                    borderRadius: "large",
-                  })}
-                >
-                  <ConnectButton />
-                </RainbowKitProvider>
+            <div className="flex flex-col items-center space-y-6 p-8">
+              <div className="relative w-20 h-20">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-amber-400 opacity-20 blur-xl" />
+                <div className="absolute inset-3 rounded-full bg-gradient-to-r from-purple-600 to-amber-500 opacity-70" />
               </div>
+              <p className="text-lg text-slate-300 text-center">
+                Connect your wallet to create your own Trust Network Token.
+              </p>
+              <ConnectButton />
             </div>
           ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="text-indigo-200 font-medium flex flex-wrap gap-12"
-            >
-              {fields.map(({ id, label, type, placeholder, description }) => (
-                <div key={id} className="space-y-3 w-[45%]">
-                  <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor={id}
-                      className="block text-sm font-semibold text-[#3E3E3E] dark:text-white hover:text-white transition duration-200"
-                    >
-                      {label}
-                    </Label>
-                    <div className="group relative">
-                      <Info className="h-5 w-5 text-indigo-400 cursor-pointer hover:text-white transition duration-200" />
-                      <span className="absolute left-1/2 -top-7 -translate-x-1/2 px-2 py-1 rounded bg-black text-xs text-white opacity-0 group-hover:opacity-100">
-                        {description}
-                      </span>
+            <form onSubmit={handleSubmit} className="p-6 sm:p-8">
+              <div className="space-y-6">
+                {fields.map(({ id, label, type, placeholder, description }) => (
+                  <div key={id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor={id}
+                        className="text-base font-semibold text-white"
+                      >
+                        {label}
+                      </Label>{" "}
+                      <div className="group relative inline-block">
+                        <div className="w-6 h-6 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center cursor-pointer transition-colors duration-200">
+                          <Info className="h-4 w-4 text-purple-400" />
+                        </div>
+                        <div className="fixed transform -translate-x-full translate-y-[-130%] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+                          <div className="bg-slate-800 text-white text-xs px-3 py-2 rounded-md shadow-lg border border-slate-700 w-48 relative">
+                            {description}
+                            <div className="absolute w-2 h-2 bg-slate-800 border-r border-b border-slate-700 transform rotate-45 bottom-[-4px] right-[12px]"></div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                    <Input
+                      id={id}
+                      name={id}
+                      type={type}
+                      placeholder={placeholder}
+                      required
+                      value={
+                        formData[id as keyof DeployContractProps] as string
+                      }
+                      onChange={handleChange}
+                      className="w-full bg-slate-800/90 border-0 text-white placeholder:text-slate-500 rounded-lg py-3 px-4 focus:ring-1 focus:ring-amber-500"
+                    />
                   </div>
-                  <Input
-                    id={id}
-                    name={id}
-                    type={type}
-                    placeholder={placeholder}
-                    required
-                    value={formData[id as keyof DeployContractProps] as string}
-                    onChange={handleChange}
-                    className="w-full bg-[#C3F3FB] dark:bg-[#363E62] text-[#3E3E3E] border border-[#6c6c6c] dark:text-indigo-200 p-6 rounded-2xl"
-                  />
+                ))}
+
+                <div className="mt-6">
+                  <div className="flex items-center space-x-3">
+                    <Input
+                      id="revokable"
+                      name="revokable"
+                      type="checkbox"
+                      checked={formData.revokable}
+                      onChange={handleChange}
+                      className="w-5 h-5 rounded border-slate-700 text-amber-500 focus:ring-amber-500/20"
+                    />
+                    <Label
+                      htmlFor="revokable"
+                      className="text-base font-medium text-white"
+                    >
+                      Revocable
+                    </Label>
+                  </div>
+                  <p className="text-sm text-slate-400 mt-1 ml-8">
+                    If checked, the token can be revoked by the issuer
+                  </p>
                 </div>
-              ))}
-              <div className="w-full">
-                <Label
-                  htmlFor="revokable"
-                  className="block text-sm font-semibold text-[#3E3E3E] dark:text-white hover:text-white transition duration-200"
+
+                <Button
+                  type="submit"
+                  className="w-full py-4 mt-6 bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 rounded-lg text-white font-medium text-lg transition-all duration-300"
+                  disabled={isDeploying}
                 >
-                  Revokable
-                </Label>
-                <Input
-                  id="revokable"
-                  name="revokable"
-                  type="checkbox"
-                  checked={formData.revokable}
-                  onChange={handleChange}
-                  className="w-6 h-6"
-                />
-                <p className="text-xs text-[#3E3E3E] dark:text-indigo-200 mt-1">
-                  If checked, the token will be revokable.
-                </p>
+                  {isDeploying ? "Deploying..." : "Create Token"}
+                </Button>
               </div>
-              <Button
-                type="submit"
-                className="py-3 bg-[#20253a] rounded-xl w-[90%] text-white font-bold text-lg hover:scale-105 hover:shadow-lg transition-all duration-500 border-none p-8"
-                disabled={isDeploying}
-              >
-                {isDeploying ? "Deploying..." : "Deploy TNT Contract"}
-              </Button>
             </form>
           )}
         </div>

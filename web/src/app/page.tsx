@@ -1,4 +1,3 @@
-import { Navbar } from "@/components/Navbar";
 import { HeroSection } from "@/components/LandingPage/hero-section";
 import { HowItWorksSection } from "@/components/LandingPage/how-it-works-section";
 import { FeaturesSection } from "@/components/LandingPage/features-section";
@@ -10,7 +9,6 @@ export default function Home() {
   return (
     <ScrollAnimationProvider>
       <main className="min-h-screen bg-gradient-to-b from-black to-slate-950 text-white overflow-hidden">
-        <Navbar />
         <HeroSection />
         <div>
           <HowItWorksSection />
