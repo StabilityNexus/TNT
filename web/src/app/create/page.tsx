@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { TNTVaultFactories } from "@/utils/address";
@@ -14,6 +13,7 @@ import { writeContract } from "@wagmi/core";
 import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
 import { Info } from "lucide-react";
 import { useTheme } from "next-themes";
+import WalletLockScreen from "@/components/WalletLockScreen";
 
 interface DeployContractProps {
   tokenName: string;
@@ -48,9 +48,9 @@ export default function CreateTNT() {
 
   const { address } = useAccount();
   const router = useRouter();
-
   const { resolvedTheme } = useTheme();
   const [isThemeReady, setIsThemeReady] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     if (resolvedTheme) {
@@ -58,7 +58,11 @@ export default function CreateTNT() {
     }
   }, [resolvedTheme]);
 
-  if (!isThemeReady) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isThemeReady || !mounted) return null;
 
   const getTransactionHistory = () => {
     const history = localStorage.getItem("transactionHistory");
@@ -81,7 +85,6 @@ export default function CreateTNT() {
       }
 
       const { tokenName, tokenSymbol, revokable } = formData;
-
       const tx = await writeContract(config as any, {
         address: TNTVaultFactories[chainId],
         abi: TNTFactoryAbi,
@@ -120,6 +123,11 @@ export default function CreateTNT() {
     e.preventDefault();
     await deployContract();
   };
+
+  if (!address) {
+    return <WalletLockScreen />;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative bg-black text-white">
       {/* Background elements */}
@@ -140,90 +148,74 @@ export default function CreateTNT() {
             Deploy a new TNT to establish trust relationships on the blockchain
           </p>
         </div>
-
         <div className="bg-slate-900/70 backdrop-blur-sm border border-slate-800/50 rounded-2xl shadow-xl overflow-hidden">
-          {!address ? (
-            <div className="flex flex-col items-center space-y-6 p-8">
-              <div className="relative w-20 h-20">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-amber-400 opacity-20 blur-xl" />
-                <div className="absolute inset-3 rounded-full bg-gradient-to-r from-purple-600 to-amber-500 opacity-70" />
-              </div>
-              <p className="text-lg text-slate-300 text-center">
-                Connect your wallet to create your own Trust Network Token.
-              </p>
-              <ConnectButton />
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="p-6 sm:p-8">
-              <div className="space-y-6">
-                {fields.map(({ id, label, type, placeholder, description }) => (
-                  <div key={id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label
-                        htmlFor={id}
-                        className="text-base font-semibold text-white"
-                      >
-                        {label}
-                      </Label>{" "}
-                      <div className="group relative inline-block">
-                        <div className="w-6 h-6 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center cursor-pointer transition-colors duration-200">
-                          <Info className="h-4 w-4 text-purple-400" />
-                        </div>
-                        <div className="fixed transform -translate-x-full translate-y-[-130%] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
-                          <div className="bg-slate-800 text-white text-xs px-3 py-2 rounded-md shadow-lg border border-slate-700 w-48 relative">
-                            {description}
-                            <div className="absolute w-2 h-2 bg-slate-800 border-r border-b border-slate-700 transform rotate-45 bottom-[-4px] right-[12px]"></div>
-                          </div>
+          <form onSubmit={handleSubmit} className="p-6 sm:p-8">
+            <div className="space-y-6">
+              {fields.map(({ id, label, type, placeholder, description }) => (
+                <div key={id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor={id}
+                      className="text-base font-semibold text-white"
+                    >
+                      {label}
+                    </Label>{" "}
+                    <div className="group relative inline-block">
+                      <div className="w-6 h-6 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center cursor-pointer transition-colors duration-200">
+                        <Info className="h-4 w-4 text-purple-400" />
+                      </div>
+                      <div className="fixed transform -translate-x-full translate-y-[-130%] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+                        <div className="bg-slate-800 text-white text-xs px-3 py-2 rounded-md shadow-lg border border-slate-700 w-48 relative">
+                          {description}
+                          <div className="absolute w-2 h-2 bg-slate-800 border-r border-b border-slate-700 transform rotate-45 bottom-[-4px] right-[12px]"></div>
                         </div>
                       </div>
                     </div>
-                    <Input
-                      id={id}
-                      name={id}
-                      type={type}
-                      placeholder={placeholder}
-                      required
-                      value={
-                        formData[id as keyof DeployContractProps] as string
-                      }
-                      onChange={handleChange}
-                      className="w-full bg-slate-800/90 border-0 text-white placeholder:text-slate-500 rounded-lg py-3 px-4 focus:ring-1 focus:ring-amber-500"
-                    />
                   </div>
-                ))}
-
-                <div className="mt-6">
-                  <div className="flex items-center space-x-3">
-                    <Input
-                      id="revokable"
-                      name="revokable"
-                      type="checkbox"
-                      checked={formData.revokable}
-                      onChange={handleChange}
-                      className="w-5 h-5 rounded border-slate-700 text-amber-500 focus:ring-amber-500/20"
-                    />
-                    <Label
-                      htmlFor="revokable"
-                      className="text-base font-medium text-white"
-                    >
-                      Revocable
-                    </Label>
-                  </div>
-                  <p className="text-sm text-slate-400 mt-1 ml-8">
-                    If checked, the token can be revoked by the issuer
-                  </p>
+                  <Input
+                    id={id}
+                    name={id}
+                    type={type}
+                    placeholder={placeholder}
+                    required
+                    value={formData[id as keyof DeployContractProps] as string}
+                    onChange={handleChange}
+                    className="w-full bg-slate-800/90 border-0 text-white placeholder:text-slate-500 rounded-lg py-3 px-4 focus:ring-1 focus:ring-amber-500"
+                  />
                 </div>
+              ))}
 
-                <Button
-                  type="submit"
-                  className="w-full py-4 mt-6 bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 rounded-lg text-white font-medium text-lg transition-all duration-300"
-                  disabled={isDeploying}
-                >
-                  {isDeploying ? "Deploying..." : "Create Token"}
-                </Button>
+              <div className="mt-6">
+                <div className="flex items-center space-x-3">
+                  <Input
+                    id="revokable"
+                    name="revokable"
+                    type="checkbox"
+                    checked={formData.revokable}
+                    onChange={handleChange}
+                    className="w-5 h-5 rounded border-slate-700 text-amber-500 focus:ring-amber-500/20"
+                  />
+                  <Label
+                    htmlFor="revokable"
+                    className="text-base font-medium text-white"
+                  >
+                    Revocable
+                  </Label>
+                </div>
+                <p className="text-sm text-slate-400 mt-1 ml-8">
+                  If checked, the token can be revoked by the issuer
+                </p>
               </div>
-            </form>
-          )}
+
+              <Button
+                type="submit"
+                className="w-full py-4 mt-6 bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 rounded-lg text-white font-medium text-lg transition-all duration-300"
+                disabled={isDeploying}
+              >
+                {isDeploying ? "Deploying..." : "Create Token"}
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

@@ -6,12 +6,14 @@ import { writeContract } from "@wagmi/core";
 import { TNTAbi } from "@/contractsABI/TNT";
 import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
+import WalletLockScreen from "@/components/WalletLockScreen";
 
 import { config } from "@/utils/config";
 
 export default function TokenActionsPage() {
   const { address } = useAccount();
   const searchParams = useSearchParams();
+  const [mounted, setMounted] = useState(false);
 
   const [contractAddress, setContractAddress] = useState<`0x${string}`>("0x0");
   const [chainId, setChainId] = useState<number>(0);
@@ -24,6 +26,10 @@ export default function TokenActionsPage() {
   const [isIssuing, setIsIssuing] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
   const [isBurning, setIsBurning] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Get contract address and chainId from URL parameters (using either "tnt" or "vault")
   useEffect(() => {
@@ -111,6 +117,13 @@ export default function TokenActionsPage() {
       setIsBurning(false);
     }
   };
+
+  if (!mounted) return null;
+
+  if (!address) {
+    return <WalletLockScreen />;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative bg-black text-white">
       {/* Background elements */}

@@ -10,6 +10,7 @@ import detectEthereumProvider from "@metamask/detect-provider";
 import Web3 from "web3";
 import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
 import { TNTAbi } from "@/contractsABI/TNT";
+import WalletLockScreen from "@/components/WalletLockScreen";
 
 interface TNTDetails {
   chainId: string;
@@ -23,6 +24,11 @@ export default function MyTNTsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { address } = useAccount();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchTNTsFromAllChains = async () => {
     try {
@@ -121,12 +127,17 @@ export default function MyTNTsPage() {
       return [];
     }
   };
-
   useEffect(() => {
     if (address) {
       fetchTNTsFromAllChains();
     }
   }, [address]);
+
+  if (!mounted) return null;
+
+  if (!address) {
+    return <WalletLockScreen />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative bg-black text-white">
