@@ -10,6 +10,7 @@ import detectEthereumProvider from "@metamask/detect-provider";
 import Web3 from "web3";
 import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
 import { TNTAbi } from "@/contractsABI/TNT";
+import WalletLockScreen from "@/components/WalletLockScreen";
 
 interface TNTDetails {
   chainId: string;
@@ -23,6 +24,11 @@ export default function MyTNTsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { address } = useAccount();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchTNTsFromAllChains = async () => {
     try {
@@ -121,60 +127,116 @@ export default function MyTNTsPage() {
       return [];
     }
   };
-
   useEffect(() => {
     if (address) {
       fetchTNTsFromAllChains();
     }
   }, [address]);
 
+  if (!mounted) return null;
+
+  if (!address) {
+    return <WalletLockScreen />;
+  }
+
   return (
-    <div className="w-full">
-      <div className="container mx-auto py-8 mt-9 justify-center text-center">
-        <h1 className="text-4xl font-extrabold text-[#6A0DAD] dark:text-[#FFC947] mb-6">
-          My TNTs
-        </h1>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative bg-black text-white">
+      {/* Background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 -left-20 w-72 h-72 bg-purple-700/20 rounded-full filter blur-3xl" />
+        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-amber-500/10 rounded-full filter blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/10 rounded-full filter blur-3xl opacity-60" />
+      </div>
+
+      <div className="max-w-7xl w-full z-10">
+        <div className="text-center mb-12 mt-12">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            My{" "}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-600">
+              Trust Network Tokens
+            </span>
+          </h1>
+          <p className="text-slate-400">
+            Manage and monitor your Trust Network Tokens across different chains
+          </p>
+        </div>
+
         {isLoading ? (
-          <p>Loading your TNTs...</p>
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-4 h-4 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.3s]"></div>
+            <div className="w-4 h-4 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.15s]"></div>
+            <div className="w-4 h-4 rounded-full bg-amber-500 animate-bounce"></div>
+          </div>
         ) : error ? (
-          <p className="text-red-500">{error}</p>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 max-w-xl mx-auto">
+            <p className="text-red-400">{error}</p>
+          </div>
         ) : ownedTNTs?.length ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
             {ownedTNTs.map((tnt) => (
               <div
                 key={`${tnt.chainId}-${tnt.address}`}
-                className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
+                className="bg-slate-900/70 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6 shadow-xl hover:shadow-purple-900/10 transition-all duration-300 relative"
               >
-                <h3 className="text-xl font-extrabold text-[#3E3E3E] dark:text-white transition duration-200">
-                  <Link
-                    href={`/c?vault=${tnt.address}&chainId=${tnt.chainId}`}
-                    className="hover:underline"
-                  >
-                    {tnt.tokenName || tnt.address}
-                  </Link>
-                </h3>
-                <p className="text-sm text-[#3E3E3E] dark:text-indigo-200 mt-2">
-                  Symbol:{" "}
-                  <span className="font-semibold">{tnt.tokenSymbol}</span>
+                {" "}
+                <p className="text-xs text-slate-500 mb-4">
+                  Chain ID {tnt.chainId}
                 </p>
-                <p className="text-sm text-[#3E3E3E] dark:text-indigo-200">
-                  Chain ID: <span className="font-semibold">{tnt.chainId}</span>
-                </p>
-                <Link
-                  href={`/t?vault=${tnt.address}&chainId=${tnt.chainId}`}
-                  className="inline-block mt-4 text-[#6A0DAD] dark:text-[#FFC947] font-semibold hover:underline transition duration-200"
-                >
-                  View Details
-                </Link>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-bold text-white">
+                      {tnt.tokenName || tnt.address}
+                    </h3>
+                    <Link
+                      href={`/t?vault=${tnt.address}&chainId=${tnt.chainId}`}
+                      className="text-amber-400 hover:text-amber-300 text-sm font-medium flex items-center gap-1 transition-colors duration-200"
+                    >
+                      View Details
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-4 h-4"
+                      >
+                        <path d="M7 17L17 7" />
+                        <path d="M7 7h10v10" />
+                      </svg>
+                    </Link>
+                  </div>
+                  <p className="text-sm text-slate-400">
+                    Symbol:{" "}
+                    <span className="text-amber-400">{tnt.tokenSymbol}</span>
+                  </p>
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-lg font-semibold text-gray-600 dark:text-indigo-300 mt-4">
-            You don't own any{" "}
-            <span className="text-[#6A0DAD] dark:text-[#FFC947]">TNTs</span>{" "}
-            yet. Start exploring and mint your first one!
-          </p>
+          <div className="bg-slate-900/70 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-8 max-w-2xl mx-auto text-center">
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-amber-400 opacity-20 blur-xl" />
+              <div className="absolute inset-3 rounded-full bg-gradient-to-r from-purple-600 to-amber-500 opacity-70" />
+            </div>{" "}
+            <p className="text-lg text-slate-300">
+              You don&apos;t own any{" "}
+              <span className="text-amber-400 font-semibold">TNTs</span> yet.
+            </p>
+            <p className="text-slate-400 mt-2">
+              Start exploring and mint your first one!
+            </p>
+            <Link
+              href="/create"
+              className="inline-flex items-center justify-center px-6 py-3 mt-6 bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 rounded-lg text-white font-medium text-lg transition-all duration-300"
+            >
+              Create Token
+            </Link>
+          </div>
         )}
       </div>
     </div>
