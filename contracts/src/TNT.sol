@@ -83,6 +83,7 @@ contract TNT is ERC721, AccessControl {
 
         emit TokenIssued(msg.sender, recipient, tokenId);
     }
+    
     function setImageURL(string memory newURL) external onlyRole(DEFAULT_ADMIN_ROLE) {
         imageURL = newURL;
     }
