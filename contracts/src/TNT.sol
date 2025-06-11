@@ -83,11 +83,10 @@ contract TNT is ERC721, AccessControl {
 
         emit TokenIssued(msg.sender, recipient, tokenId);
     }
-
-    function tokenImageURL() public view returns (string memory) {
-        return imageURL;
+    function setImageURL(string memory newURL) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        imageURL = newURL;
     }
-
+    
     /**
      * @dev Revokes a trust token if revocation is enabled.
      * @param tokenId The ID of the token to revoke.

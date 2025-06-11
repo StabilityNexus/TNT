@@ -99,7 +99,7 @@ export default function MyTNTsPage() {
             publicClient.readContract({
               address: tntAddress,
               abi: TNTAbi,
-              functionName: "tokenImageURL",
+              functionName: "imageURL",
             }) as Promise<string>,
           ]);
 
@@ -157,6 +157,10 @@ export default function MyTNTsPage() {
                     src={tnt.imageURL}
                     alt={`${tnt.tokenName} preview`}
                     className="w-full h-48 object-cover rounded-xl mb-4"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                    loading="lazy"
                   />
                 )}
                 <h3 className="text-xl font-extrabold text-[#3E3E3E] dark:text-white transition duration-200">
