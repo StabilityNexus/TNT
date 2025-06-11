@@ -25,6 +25,7 @@ contract TNT is ERC721, AccessControl {
     mapping(address => uint256[]) private _tokensByRecipient;
     bool public immutable revokable;
     address public factoryContract;
+    string public imageURL;
 
     /**
      * @dev Struct to store metadata related to a token.
@@ -48,19 +49,22 @@ contract TNT is ERC721, AccessControl {
      * @param symbol The symbol of the token.
      * @param _revokable Boolean indicating if the token can be revoked.
      * @param _factoryContract Address of the factory contract.
+     * @param _imageURL contains the image associated with the token
      */
     constructor(
         address admin,
         string memory name,
         string memory symbol,
         bool _revokable,
-        address _factoryContract
+        address _factoryContract,
+        string memory _imageURL
     ) ERC721(name, symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MINTER_ROLE, admin);
         _grantRole(REVOKER_ROLE, admin);
         revokable = _revokable;
         factoryContract = _factoryContract;
+        imageURL = _imageURL;
     }
 
     /**
@@ -79,7 +83,11 @@ contract TNT is ERC721, AccessControl {
 
         emit TokenIssued(msg.sender, recipient, tokenId);
     }
-
+    
+    function setImageURL(string memory newURL) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        imageURL = newURL;
+    }
+    
     /**
      * @dev Revokes a trust token if revocation is enabled.
      * @param tokenId The ID of the token to revoke.

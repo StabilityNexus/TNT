@@ -16,6 +16,7 @@ interface TNTDetails {
   address: `0x${string}`;
   tokenName: string;
   tokenSymbol: string;
+  imageURL: string;
 }
 
 export default function MyTNTsPage() {
@@ -84,7 +85,7 @@ export default function MyTNTsPage() {
       const tntPromises = tntAddresses.map(async (tntAddress) => {
         try {
           // Fetch token details using standard ERC721 functions
-          const [tokenName, tokenSymbol] = await Promise.all([
+          const [tokenName, tokenSymbol, imageURL] = await Promise.all([
             publicClient.readContract({
               address: tntAddress,
               abi: TNTAbi,
@@ -95,6 +96,11 @@ export default function MyTNTsPage() {
               abi: TNTAbi,
               functionName: "symbol",
             }) as Promise<string>,
+            publicClient.readContract({
+              address: tntAddress,
+              abi: TNTAbi,
+              functionName: "imageURL",
+            }) as Promise<string>,
           ]);
 
           console.log("Name:", tokenName, "Symbol:", tokenSymbol);
@@ -102,8 +108,9 @@ export default function MyTNTsPage() {
           return {
             chainId,
             address: tntAddress,
-            tokenName: tokenName || "",
-            tokenSymbol: tokenSymbol || "",
+            tokenName,
+            tokenSymbol,
+            imageURL,
           };
         } catch (error) {
           console.error(
@@ -145,6 +152,17 @@ export default function MyTNTsPage() {
                 key={`${tnt.chainId}-${tnt.address}`}
                 className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
               >
+                {tnt.imageURL && (
+                  <img
+                    src={tnt.imageURL}
+                    alt={`${tnt.tokenName} preview`}
+                    className="w-full h-48 object-cover rounded-xl mb-4"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                    loading="lazy"
+                  />
+                )}
                 <h3 className="text-xl font-extrabold text-[#3E3E3E] dark:text-white transition duration-200">
                   <Link
                     href={`/c?vault=${tnt.address}&chainId=${tnt.chainId}`}

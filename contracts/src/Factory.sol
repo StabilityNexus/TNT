@@ -21,16 +21,20 @@ contract Factory {
      * @param name The name of the TNT token.
      * @param symbol The symbol of the TNT token.
      * @param revokable Whether the token is revokable or not.
+     * @param imageURL contains the image of the token
      * @return The address of the newly deployed TNT contract.
      */
-    function createTNT(string memory name, string memory symbol, bool revokable) public returns (address) {
-        TNT newTNT = new TNT(msg.sender, name, symbol, revokable, address(this));
+    function createTNT(string memory name, string memory symbol, bool revokable, string memory imageURL)
+    public
+    returns (address)
+    {
+        TNT newTNT = new TNT(msg.sender, name, symbol, revokable, address(this), imageURL);
         address tntAddress = address(newTNT);
         deployedTNTs[msg.sender].push(tntAddress);
         emit TNTCreated(msg.sender, tntAddress);
         return tntAddress;
     }
-
+    
     /**
      * @dev Registers an issued token in the factory contract.
      * This function is called by TNT contracts when issuing tokens.

@@ -20,6 +20,7 @@ interface DeployContractProps {
   tokenName: string;
   tokenSymbol: string;
   revokable: boolean;
+  imageURL: string;
 }
 
 const fields = [
@@ -37,14 +38,24 @@ const fields = [
     placeholder: "TKN",
     description: "A short identifier for your token (2-4 characters)",
   },
+  {
+    id: "imageURL",
+    label: "Image URL",
+    type: "text",
+    placeholder: "https://example.com/image.png",
+    description: "Image to associate with this TNT",
+  },
 ];
+
 
 export default function CreateTNT() {
   const [formData, setFormData] = useState<DeployContractProps>({
     tokenName: "",
     tokenSymbol: "",
     revokable: false,
+    imageURL: "",
   });
+  
   const [isDeploying, setIsDeploying] = useState(false);
 
   const { address } = useAccount();
@@ -81,13 +92,13 @@ export default function CreateTNT() {
         return;
       }
 
-      const { tokenName, tokenSymbol, revokable } = formData;
+      const { tokenName, tokenSymbol, revokable, imageURL } = formData;
 
       const tx = await writeContract(config as any, {
         address: TNTVaultFactories[chainId],
         abi: TNTFactoryAbi,
         functionName: "createTNT",
-        args: [tokenName, tokenSymbol, revokable],
+        args: [tokenName, tokenSymbol, revokable, imageURL],
       });
 
       const txDetails = {
