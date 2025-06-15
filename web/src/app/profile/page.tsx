@@ -20,7 +20,7 @@ interface TNTDetails {
 }
 
 export default function ProfilePage() {
-  const [recievedTNTs, setrecievedTNTs] = useState<TNTDetails[] | null>(null);
+  const [receivedTNTs, setReceivedTNTs] = useState<TNTDetails[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { address } = useAccount();
@@ -39,7 +39,7 @@ export default function ProfilePage() {
       const results = await Promise.all(chainPromises);
       allTNTs = results.flat().filter((tnt): tnt is TNTDetails => tnt !== null);
 
-      setrecievedTNTs(allTNTs);
+      setReceivedTNTs(allTNTs);
     } catch (error) {
       console.error("Error fetching TNTs:", error);
       setError("Failed to fetch TNTs. Please try again later.");
@@ -133,21 +133,21 @@ export default function ProfilePage() {
     if (address) {
       fetchTNTsFromAllChains();
     }
-  }, [address]);
+  }, [address,fetchTNTsFromAllChains]);
 
   return (
     <div className="w-full">
       <div className="container mx-auto py-8 mt-9 justify-center text-center">
         <h1 className="text-4xl font-extrabold text-[#6A0DAD] dark:text-[#FFC947] mb-6">
-          Recieved TNTs
+          Received TNTs
         </h1>
         {isLoading ? (
           <p>Loading your TNTs...</p>
         ) : error ? (
           <p className="text-red-500">{error}</p>
-        ) : recievedTNTs?.length ? (
+        ) : receivedTNTs?.length ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recievedTNTs.map((tnt) => (
+            {receivedTNTs.map((tnt) => (
               <div
                 key={`${tnt.chainId}-${tnt.address}`}
                 className="bg-gradient-to-r from-[#C3F3FB] to-[#87DCEB] dark:from-[#363E62] dark:to-[#161928] rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
@@ -189,7 +189,7 @@ export default function ProfilePage() {
           </div>
         ) : (
           <p className="text-lg font-semibold text-gray-600 dark:text-indigo-300 mt-4">
-            You haven't recieved any{" "}
+            You haven't received any{" "}
             <span className="text-[#6A0DAD] dark:text-[#FFC947]">TNTs</span>{" "}
             yet. Start exploring or mint your first one!
           </p>

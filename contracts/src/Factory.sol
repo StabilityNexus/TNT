@@ -88,7 +88,7 @@ contract Factory {
         return _getSubArray(getDeployedTNTs(owner), start, end);
     }
 
-    function getUserTNTCount(address user) external view returns (uint256) { return getUserTNTs(user).length; }
-    function getDeployedTNTCount(address owner) external view returns (uint256) { return getDeployedTNTs(owner).length; }
+    function getUserTNTCount(address user) external view returns (uint256) { return userTNTs[user].length; }
+    function getDeployedTNTCount(address owner) external view returns (uint256) { return deployedTNTs[owner].length; }
 
 }
