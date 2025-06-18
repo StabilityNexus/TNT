@@ -81,12 +81,11 @@ jobs:
       - name: Build and Export with Next.js
         run: |
           ${{ steps.detect-package-manager.outputs.runner }} next build
-          ${{ steps.detect-package-manager.outputs.runner }} next export
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: ./web/out
 
   # Deployment job
   deploy:
