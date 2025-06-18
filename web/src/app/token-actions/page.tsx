@@ -11,7 +11,6 @@ import { config } from "@/utils/config";
 
 export default function TokenActionsPage() {
   const { address } = useAccount();
-  const searchParams = useSearchParams();
 
   const [contractAddress, setContractAddress] = useState<`0x${string}`>("0x0");
   const [chainId, setChainId] = useState<number>(0);
@@ -27,13 +26,17 @@ export default function TokenActionsPage() {
 
   // Get contract address and chainId from URL parameters (using either "tnt" or "vault")
   useEffect(() => {
-    const tnt = searchParams.get("tnt") || searchParams.get("vault");
-    const chain = searchParams.get("chainId");
-    if (tnt && chain) {
-      setContractAddress(tnt as `0x${string}`);
-      setChainId(Number(chain));
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tnt = params.get('tnt') || params.get('vault');
+      const chain = params.get('chainId');
+
+      if (tnt && chain) {
+        setContractAddress(tnt as `0x${string}`);
+        setChainId(Number(chain));
+      }
     }
-  }, [searchParams]);
+  }, []);
 
   const handleIssueToken = async (e: React.FormEvent) => {
     e.preventDefault();
