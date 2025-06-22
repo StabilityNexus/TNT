@@ -26,10 +26,10 @@ export default function TokenActionsPage() {
 
   // Get contract address and chainId from URL parameters (using either "tnt" or "vault")
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const tnt = params.get('tnt') || params.get('vault');
-      const chain = params.get('chainId');
+      const tnt = params.get("tnt") || params.get("vault");
+      const chain = params.get("chainId");
 
       if (tnt && chain) {
         setContractAddress(tnt as `0x${string}`);

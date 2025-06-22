@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SectionWrapper } from "@/components/ui/section-wrapper";
 import Image from "next/image";
 import TNT from "@/components/icons/TNT.svg";
+import Link from "next/link";
 export function HeroSection() {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -60,13 +61,14 @@ export function HeroSection() {
               between individuals and organizations on the blockchain.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button
-                onClick={() => scrollToSection("#cta")}
-                size="lg"
-                className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white shadow-lg shadow-purple-700/20"
-              >
-                Get Started
-              </Button>
+              <Link href="/create">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white shadow-lg shadow-purple-700/20"
+                >
+                  Get Started
+                </Button>
+              </Link>
               <Button
                 onClick={() => scrollToSection("#how-it-works")}
                 size="lg"

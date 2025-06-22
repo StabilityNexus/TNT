@@ -86,7 +86,7 @@ export default function ProfilePage() {
       const totalCount = await fetchTotalCount();
       const totalPages = Math.ceil(totalCount / pagination.itemsPerPage);
 
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
         currentPage: page,
         totalPages,
@@ -99,13 +99,18 @@ export default function ProfilePage() {
       }
 
       const startIndex = (page - 1) * pagination.itemsPerPage;
-      const endIndex = Math.min(startIndex + pagination.itemsPerPage, totalCount);
+      const endIndex = Math.min(
+        startIndex + pagination.itemsPerPage,
+        totalCount
+      );
 
       let allTNTs: TNTDetails[] = [];
       let currentIndex = 0;
       let remainingItems = endIndex - startIndex;
 
-      for (const [chainId, factoryAddress] of Object.entries(TNTVaultFactories)) {
+      for (const [chainId, factoryAddress] of Object.entries(
+        TNTVaultFactories
+      )) {
         if (remainingItems <= 0) break;
 
         try {
@@ -230,33 +235,37 @@ export default function ProfilePage() {
   const generatePageNumbers = () => {
     const pages = [];
     const { currentPage, totalPages } = pagination;
-    
+
     // Always show first page
     if (totalPages > 0) {
       pages.push(1);
     }
-    
+
     // Add ellipsis and current page area
     if (currentPage > 3) {
       pages.push("...");
     }
-    
+
     // Add pages around current page
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+    for (
+      let i = Math.max(2, currentPage - 1);
+      i <= Math.min(totalPages - 1, currentPage + 1);
+      i++
+    ) {
       if (!pages.includes(i)) {
         pages.push(i);
       }
     }
-    
+
     // Add ellipsis and last page
     if (currentPage < totalPages - 2) {
       pages.push("...");
     }
-    
+
     if (totalPages > 1 && !pages.includes(totalPages)) {
       pages.push(totalPages);
     }
-    
+
     return pages;
   };
 
@@ -272,13 +281,17 @@ export default function ProfilePage() {
         <h1 className="text-4xl font-extrabold text-[#6A0DAD] dark:text-[#FFC947] mb-6">
           Received TNTs
         </h1>
-        
+
         {/* Pagination Info */}
         {!isLoading && !error && pagination.totalCount > 0 && (
           <div className="mb-4 text-sm text-gray-600 dark:text-gray-300">
-            Showing {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} to{" "}
-            {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalCount)} of{" "}
-            {pagination.totalCount} TNTs
+            Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}{" "}
+            to{" "}
+            {Math.min(
+              pagination.currentPage * pagination.itemsPerPage,
+              pagination.totalCount
+            )}{" "}
+            of {pagination.totalCount} TNTs
           </div>
         )}
 
@@ -311,7 +324,7 @@ export default function ProfilePage() {
                       alt={`${tnt.tokenName} preview`}
                       className="w-full h-48 object-cover rounded-xl mb-4"
                       onError={(e) => {
-                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.style.display = "none";
                       }}
                       loading="lazy"
                     />
@@ -329,7 +342,8 @@ export default function ProfilePage() {
                     <span className="font-semibold">{tnt.tokenSymbol}</span>
                   </p>
                   <p className="text-sm text-[#3E3E3E] dark:text-indigo-200">
-                    Chain ID: <span className="font-semibold">{tnt.chainId}</span>
+                    Chain ID:{" "}
+                    <span className="font-semibold">{tnt.chainId}</span>
                   </p>
                   <Link
                     href={`/t?vault=${tnt.address}&chainId=${tnt.chainId}`}
@@ -350,8 +364,8 @@ export default function ProfilePage() {
                   disabled={pagination.currentPage === 1}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                     pagination.currentPage === 1
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'bg-[#6A0DAD] text-white hover:bg-[#5A0B9D] dark:bg-[#FFC947] dark:text-black dark:hover:bg-[#FFB627]'
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                      : "bg-[#6A0DAD] text-white hover:bg-[#5A0B9D] dark:bg-[#FFC947] dark:text-black dark:hover:bg-[#FFB627]"
                   }`}
                 >
                   Previous
@@ -361,14 +375,16 @@ export default function ProfilePage() {
                 {generatePageNumbers().map((page, index) => (
                   <button
                     key={index}
-                    onClick={() => typeof page === 'number' ? handlePageChange(page) : null}
+                    onClick={() =>
+                      typeof page === "number" ? handlePageChange(page) : null
+                    }
                     disabled={page === "..."}
                     className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
                       page === pagination.currentPage
-                        ? 'bg-[#6A0DAD] text-white dark:bg-[#FFC947] dark:text-black'
+                        ? "bg-[#6A0DAD] text-white dark:bg-[#FFC947] dark:text-black"
                         : page === "..."
-                        ? 'text-gray-400 cursor-default'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                        ? "text-gray-400 cursor-default"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                     }`}
                   >
                     {page}
@@ -381,8 +397,8 @@ export default function ProfilePage() {
                   disabled={pagination.currentPage === pagination.totalPages}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                     pagination.currentPage === pagination.totalPages
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'bg-[#6A0DAD] text-white hover:bg-[#5A0B9D] dark:bg-[#FFC947] dark:text-black dark:hover:bg-[#FFB627]'
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                      : "bg-[#6A0DAD] text-white hover:bg-[#5A0B9D] dark:bg-[#FFC947] dark:text-black dark:hover:bg-[#FFB627]"
                   }`}
                 >
                   Next
