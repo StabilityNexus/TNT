@@ -28,7 +28,7 @@ export function CtaSection() {
                 <Link href="/create">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white shadow-lg shadow-purple-700/20 group"
+                    className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white shadow-lg shadow-purple-700/20 group w-full md:w-auto"
                   >
                     <span>Get Started</span>
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -37,7 +37,7 @@ export function CtaSection() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-slate-700 text-white hover:text-white bg-inherit hover:bg-slate-800"
+                  className="w-full md:w-auto border-slate-700 text-white hover:text-white bg-inherit hover:bg-slate-800"
                 >
                   View Documentation
                 </Button>

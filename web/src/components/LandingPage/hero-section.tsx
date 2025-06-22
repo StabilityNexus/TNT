@@ -28,7 +28,7 @@ export function HeroSection() {
   return (
     <SectionWrapper
       id="hero"
-      className={`min-h-screen pt-24 pb-12 px-4 flex items-center relative overflow-hidden`}
+      className={`min-h-screen pt-14 pb-12 px-4 flex items-center relative overflow-hidden`}
     >
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 -left-20 w-72 h-72 bg-purple-700/30 rounded-full filter blur-3xl" />
@@ -59,12 +59,12 @@ export function HeroSection() {
             <p className="text-lg md:text-xl text-slate-300 max-w-lg mx-auto lg:mx-0">
               Issue and revoke ERC721 tokens that represent trust relationships
               between individuals and organizations on the blockchain.
-            </p>
+            </p>{" "}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Link href="/create">
+              <Link href="/create" className="w-full md:w-auto">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white shadow-lg shadow-purple-700/20"
+                  className="w-full bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white shadow-lg shadow-purple-700/20"
                 >
                   Get Started
                 </Button>
@@ -73,7 +73,7 @@ export function HeroSection() {
                 onClick={() => scrollToSection("#how-it-works")}
                 size="lg"
                 variant="outline"
-                className="border-slate-700 bg-inherit text-white hover:text-white hover:bg-slate-800"
+                className="w-full md:w-auto border-slate-700 bg-inherit text-white hover:text-white hover:bg-slate-800"
               >
                 Learn More
               </Button>
