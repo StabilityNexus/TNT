@@ -299,6 +299,12 @@ export default function MyTNTsPage() {
     }
   }, [address, fetchPaginatedTNTs]);
 
+  if (!mounted) return null;
+
+  if (!address) {
+    return <WalletLockScreen />;
+  }
+
   return (
     <div className="min-h-screen relative bg-black text-white">
       {/* Background elements */}

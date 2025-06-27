@@ -11,6 +11,7 @@ import detectEthereumProvider from "@metamask/detect-provider";
 import Web3 from "web3";
 import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
 import { TNTAbi } from "@/contractsABI/TNT";
+import WalletLockScreen from "@/components/WalletLockScreen";
 import {
   Card,
   CardContent,
@@ -47,6 +48,11 @@ export default function ProfilePage() {
     itemsPerPage: 6,
   });
   const { address } = useAccount();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchTotalCount = useCallback(async (): Promise<number> => {
     try {
@@ -290,6 +296,12 @@ export default function ProfilePage() {
       fetchPaginatedTNTs(1);
     }
   }, [address, fetchPaginatedTNTs]);
+
+  if (!mounted) return null;
+
+  if (!address) {
+    return <WalletLockScreen />;
+  }
 
   return (
     <div className="min-h-screen relative bg-black text-white">
