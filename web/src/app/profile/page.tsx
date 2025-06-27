@@ -379,7 +379,7 @@ export default function ProfilePage() {
               {ownedTNTs.map((tnt) => (
                 <Card
                   key={`${tnt.chainId}-${tnt.address}`}
-                  className="group bg-gradient-to-b from-slate-800/60 to-slate-900/90 backdrop-blur-sm border border-slate-700/30 rounded-lg overflow-hidden shadow-md hover:shadow-purple-900/10 hover:border-amber-500/20 transition-all duration-300"
+                  className="group bg-[#0B101D] backdrop-blur-sm border border-slate-700/30 rounded-lg overflow-hidden shadow-md hover:shadow-purple-900/10 hover:border-amber-500/20 transition-all duration-300"
                 >
                   {tnt.imageURL ? (
                     <div className="relative w-full h-40 overflow-hidden">
@@ -468,7 +468,7 @@ export default function ProfilePage() {
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
                   variant="outline"
-                  className={`border-slate-700 bg-slate-800/50 text-white hover:bg-slate-700 hover:text-white ${
+                  className={`border-slate-700 bg-[#0B101D] text-white hover:bg-slate-700 hover:text-white ${
                     pagination.currentPage === 1
                       ? "opacity-50 cursor-not-allowed"
                       : ""
@@ -525,7 +525,7 @@ export default function ProfilePage() {
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage === pagination.totalPages}
                   variant="outline"
-                  className={`border-slate-700 bg-slate-800/50 text-white hover:bg-slate-700 hover:text-white ${
+                  className={`border-slate-700 bg-[#0B101D] text-white hover:bg-slate-700 hover:text-white ${
                     pagination.currentPage === pagination.totalPages
                       ? "opacity-50 cursor-not-allowed"
                       : ""

@@ -154,7 +154,7 @@ export default function InteractionClient() {
         </div>
 
         <div className="container mx-auto py-24 px-4 sm:px-6 z-10 relative max-w-7xl">
-          <Card className="bg-slate-900/70 backdrop-blur-sm border border-red-500/30 max-w-xl mx-auto overflow-hidden">
+          <Card className="bg-[#0B101D] backdrop-blur-sm border border-red-500/30 max-w-xl mx-auto overflow-hidden">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center p-4">
                 <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
@@ -212,7 +212,7 @@ export default function InteractionClient() {
         </div>
 
         {/* Main Content Card */}
-        <Card className="bg-gradient-to-b from-slate-800/60 to-slate-900/90 backdrop-blur-sm border border-slate-700/30 rounded-xl overflow-hidden shadow-2xl">
+        <Card className="bg-[#0B101D] backdrop-blur-sm border border-slate-700/30 rounded-xl overflow-hidden shadow-2xl">
           <CardHeader className="border-b border-slate-700/30 bg-slate-800/40">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center space-x-3">
