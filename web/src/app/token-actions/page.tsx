@@ -59,6 +59,7 @@ export default function TokenActionsPage() {
       });
       toast.success("Token issued successfully!");
       console.log("Issue token tx:", tx);
+      setIssueRecipient("");
     } catch (error) {
       console.error("Error issuing token:", error);
       toast.error("Failed to issue token");
@@ -85,6 +86,7 @@ export default function TokenActionsPage() {
       });
       toast.success("Token revoked successfully!");
       console.log("Revoke token tx:", tx);
+      setRevokeTokenId("");
     } catch (error) {
       console.error("Error revoking token:", error);
       toast.error("Failed to revoke token");
@@ -111,6 +113,7 @@ export default function TokenActionsPage() {
       });
       toast.success("Token burned successfully!");
       console.log("Burn token tx:", tx);
+      setBurnTokenId("");
     } catch (error) {
       console.error("Error burning token:", error);
       toast.error("Failed to burn token");

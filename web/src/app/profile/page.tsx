@@ -7,19 +7,10 @@ import { useAccount } from "wagmi";
 import { TNTVaultFactories } from "@/utils/address";
 import { config } from "@/utils/config";
 import { getPublicClient } from "@wagmi/core";
-import detectEthereumProvider from "@metamask/detect-provider";
-import Web3 from "web3";
 import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
 import { TNTAbi } from "@/contractsABI/TNT";
 import WalletLockScreen from "@/components/WalletLockScreen";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface TNTDetails {
