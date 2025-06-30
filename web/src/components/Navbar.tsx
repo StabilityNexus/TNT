@@ -8,11 +8,22 @@ import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-const navLinks = [
+interface NavLink {
+  name: string;
+  href: string;
+}
+
+const landingPageLinks: NavLink[] = [
   { name: "Home", href: "#hero" },
   { name: "How It Works", href: "#how-it-works" },
   { name: "Features", href: "#features" },
   { name: "Get Started", href: "#cta" },
+];
+
+const appLinks = [
+  { name: "Create", href: "/create" },
+  { name: "My TNTs", href: "/my-tnts" },
+  { name: "Profile", href: "/profile" },
 ];
 
 export function Navbar() {
@@ -59,16 +70,25 @@ export function Navbar() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          {isLandingPage &&
-            navLinks.map((link) => (
-              <button
-                key={link.name}
-                onClick={() => scrollToSection(link.href)}
-                className="text-slate-300 hover:text-white transition-colors duration-200"
-              >
-                {link.name}
-              </button>
-            ))}
+          {isLandingPage
+            ? landingPageLinks.map((link) => (
+                <button
+                  key={link.name}
+                  onClick={() => scrollToSection(link.href)}
+                  className="text-slate-300 hover:text-white transition-colors duration-200"
+                >
+                  {link.name}
+                </button>
+              ))
+            : appLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="text-slate-300 hover:text-white transition-colors duration-200"
+                >
+                  {link.name}
+                </Link>
+              ))}
           <ConnectButton />
         </nav>
 
@@ -85,16 +105,25 @@ export function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-md border-b border-slate-800/50 shadow-lg py-4">
           <nav className="flex flex-col items-center space-y-4 px-4">
-            {isLandingPage &&
-              navLinks.map((link) => (
-                <button
-                  key={link.name}
-                  onClick={() => scrollToSection(link.href)}
-                  className="text-slate-300 hover:text-white transition-colors duration-200 py-2"
-                >
-                  {link.name}
-                </button>
-              ))}
+            {isLandingPage
+              ? landingPageLinks.map((link) => (
+                  <button
+                    key={link.name}
+                    onClick={() => scrollToSection(link.href)}
+                    className="text-slate-300 hover:text-white transition-colors duration-200 py-2"
+                  >
+                    {link.name}
+                  </button>
+                ))
+              : appLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className="text-slate-300 hover:text-white transition-colors duration-200 py-2"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
             <div className="w-full flex justify-center">
               <ConnectButton />
             </div>

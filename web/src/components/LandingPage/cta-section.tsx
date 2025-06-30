@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { SectionWrapper } from "@/components/ui/section-wrapper";
 import { ArrowRight, Shield, Users, Building } from "lucide-react";
+import Link from "next/link";
 
 export function CtaSection() {
   return (
@@ -24,17 +25,19 @@ export function CtaSection() {
                 TNT to establish verifiable trust on the blockchain.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white shadow-lg shadow-purple-700/20 group"
-                >
-                  <span>Get Started</span>
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Button>
+                <Link href="/create">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white shadow-lg shadow-purple-700/20 group w-full md:w-auto"
+                  >
+                    <span>Get Started</span>
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </Link>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-slate-700 text-white hover:text-white bg-inherit hover:bg-slate-800"
+                  className="w-full md:w-auto border-slate-700 text-white hover:text-white bg-inherit hover:bg-slate-800"
                 >
                   View Documentation
                 </Button>
