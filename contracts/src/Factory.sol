@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AEL
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./TNT.sol";
 
 contract Factory {
@@ -12,8 +11,6 @@ contract Factory {
     event TNTCreated(address indexed owner, address tntAddress);
     event TokenRegistered(address indexed user, address indexed tntAddress);
     event TokenUnregistered(address indexed user, address indexed tntAddress);
-
-    constructor(address _initialOwner) Ownable(_initialOwner) { }
 
     modifier onlyDeployedTNT() {
         require(isDeployedTNT[msg.sender], "Only deployed TNT contracts can call this function");
