@@ -112,7 +112,7 @@ export default function MyTNTsPage() {
         setError(null);
         console.log(`Fetching TNTs for page ${page}, user: ${address}`);
 
-        let allTNTs: TNTDetails[] = [];
+        const allTNTs: TNTDetails[] = [];
         const seenTNTs = new Set<string>(); // Track unique TNTs by address+chainId
 
         // Get TNTs from contract functions

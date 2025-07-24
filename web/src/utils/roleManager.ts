@@ -112,7 +112,7 @@ export class TNTRoleManager {
         address: this.contractAddress,
         abi: TNTAbi,
         functionName: "revokable",
-      }) as Promise<boolean>;
+      }) as boolean;
 
       return {
         canIssue: userRoles.hasAdminRole || userRoles.hasMinterRole,
