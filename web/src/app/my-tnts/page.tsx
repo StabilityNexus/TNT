@@ -7,8 +7,8 @@ import { useAccount } from "wagmi";
 import { TNTVaultFactories } from "@/utils/address";
 import { config } from "@/utils/config";
 import { getPublicClient } from "@wagmi/core";
-import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
-import { TNTAbi } from "@/contractsABI/TNT";
+import { TNTFactoryAbi } from "@/utils/contractsABI/TNTFactory";
+import { TNTAbi } from "@/utils/contractsABI/TNT";
 import WalletLockScreen from "@/components/WalletLockScreen";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,38 +46,56 @@ export default function MyTNTsPage() {
   }, []);
 
   const fetchTotalCount = useCallback(async (): Promise<number> => {
+    if (!address) return 0;
+
     try {
+      console.log("Fetching TNT count for user:", address);
+      
       let totalCount = 0;
+      for (const [chainId, factoryAddress] of Object.entries(TNTVaultFactories)) {
+        try {
+          const publicClient = getPublicClient(config as any, {
+            chainId: parseInt(chainId),
+          });
 
-      const chainPromises = Object.entries(TNTVaultFactories).map(
-        async ([chainId, factoryAddress]) => {
+          if (!publicClient) continue;
+
+          console.log(`Trying to fetch count from contract for chain ${chainId}`);
+          
           try {
-            const publicClient = getPublicClient(config as any, {
-              chainId: parseInt(chainId),
-            });
-
-            if (!publicClient || !address) {
-              return 0;
-            }
-
-            const count = (await publicClient.readContract({
+            const deployedTNTs = await publicClient.readContract({
               address: factoryAddress as `0x${string}`,
               abi: TNTFactoryAbi,
-              functionName: "getDeployedTNTCount",
+              functionName: "getDeployedTNTs",
               args: [address as `0x${string}`],
-            })) as bigint;
+            }) as `0x${string}`[];
 
-            return Number(count);
-          } catch (error) {
-            console.error(`Error fetching count for chain ${chainId}:`, error);
-            return 0;
+            console.log(`Contract returned ${deployedTNTs.length} TNTs for chain ${chainId}`);
+            totalCount += deployedTNTs.length;
+          } catch (contractError) {
+            console.warn(`Contract functions not working for chain ${chainId}:`, contractError);
+            
+            // Try the count function as final fallback
+            try {
+              const count = await publicClient.readContract({
+                address: factoryAddress as `0x${string}`,
+                abi: TNTFactoryAbi,
+                functionName: "getDeployedTNTCount",
+                args: [address as `0x${string}`],
+              }) as bigint;
+              
+              totalCount += Number(count);
+              console.log(`Got count ${count} from getDeployedTNTCount for chain ${chainId}`);
+            } catch (countError) {
+              console.warn(`All contract methods failed for chain ${chainId}:`, countError);
+            }
           }
+        } catch (error) {
+          console.warn(`Error checking chain ${chainId}:`, error);
         }
-      );
+      }
 
-      const results = await Promise.all(chainPromises);
-      totalCount = results.reduce((sum, count) => sum + count, 0);
-
+      console.log(`Total count from contracts: ${totalCount}`);
       return totalCount;
     } catch (error) {
       console.error("Error fetching total count:", error);
@@ -87,12 +105,70 @@ export default function MyTNTsPage() {
 
   const fetchPaginatedTNTs = useCallback(
     async (page: number) => {
+      if (!address) return;
+
       try {
         setIsLoading(true);
         setError(null);
+        console.log(`Fetching TNTs for page ${page}, user: ${address}`);
 
-        const totalCount = await fetchTotalCount();
+        let allTNTs: TNTDetails[] = [];
+        const seenTNTs = new Set<string>(); // Track unique TNTs by address+chainId
+
+        // Get TNTs from contract functions
+        for (const [chainId, factoryAddress] of Object.entries(TNTVaultFactories)) {
+          try {
+            const publicClient = getPublicClient(config as any, {
+              chainId: parseInt(chainId),
+            });
+
+            if (!publicClient) continue;
+
+            console.log(`Trying to fetch TNTs from contract for chain ${chainId}`);
+
+            try {
+              const deployedTNTs = await publicClient.readContract({
+                address: factoryAddress as `0x${string}`,
+                abi: TNTFactoryAbi,
+                functionName: "getDeployedTNTs",
+                args: [address as `0x${string}`],
+              }) as `0x${string}`[];
+
+              console.log(`Contract returned ${deployedTNTs.length} TNT addresses for chain ${chainId}`);
+
+              if (deployedTNTs.length > 0) {
+                // Fetch details for contract TNTs
+                const contractTNTs = await fetchTNTDetailsForAddresses(
+                  deployedTNTs,
+                  chainId,
+                  publicClient
+                );
+
+                // Add contract TNTs with deduplication
+                for (const contractTNT of contractTNTs) {
+                  const tntKey = `${contractTNT.address.toLowerCase()}-${contractTNT.chainId}`;
+                  if (!seenTNTs.has(tntKey)) {
+                    seenTNTs.add(tntKey);
+                    allTNTs.push(contractTNT);
+                  }
+                }
+              }
+            } catch (contractError) {
+              console.warn(`Contract functions failed for chain ${chainId}:`, contractError);
+            }
+          } catch (error) {
+            console.warn(`Error fetching from chain ${chainId}:`, error);
+          }
+        }
+
+        console.log(`Total TNTs found: ${allTNTs.length}`);
+
+        // Apply pagination
+        const totalCount = allTNTs.length;
         const totalPages = Math.ceil(totalCount / pagination.itemsPerPage);
+        const startIndex = (page - 1) * pagination.itemsPerPage;
+        const endIndex = Math.min(startIndex + pagination.itemsPerPage, totalCount);
+        const paginatedTNTs = allTNTs.slice(startIndex, endIndex);
 
         setPagination((prev) => ({
           ...prev,
@@ -101,86 +177,8 @@ export default function MyTNTsPage() {
           totalCount,
         }));
 
-        if (totalCount === 0) {
-          setOwnedTNTs([]);
-          return;
-        }
-
-        const startIndex = (page - 1) * pagination.itemsPerPage;
-        const endIndex = Math.min(
-          startIndex + pagination.itemsPerPage,
-          totalCount
-        );
-
-        let allTNTs: TNTDetails[] = [];
-        let currentIndex = 0;
-        let remainingItems = endIndex - startIndex;
-
-        for (const [chainId, factoryAddress] of Object.entries(
-          TNTVaultFactories
-        )) {
-          if (remainingItems <= 0) break;
-
-          try {
-            const publicClient = getPublicClient(config as any, {
-              chainId: parseInt(chainId),
-            });
-
-            if (!publicClient || !address) {
-              continue;
-            }
-
-            const chainCount = (await publicClient.readContract({
-              address: factoryAddress as `0x${string}`,
-              abi: TNTFactoryAbi,
-              functionName: "getDeployedTNTCount",
-              args: [address as `0x${string}`],
-            })) as bigint;
-
-            const chainCountNum = Number(chainCount);
-
-            if (currentIndex + chainCountNum <= startIndex) {
-              // Skip this entire chain
-              currentIndex += chainCountNum;
-              continue;
-            }
-
-            // Calculate start and end indices for this chain
-            const chainStartIndex = Math.max(0, startIndex - currentIndex);
-            const chainEndIndex = Math.min(
-              chainCountNum,
-              chainStartIndex + remainingItems
-            );
-
-            if (chainStartIndex < chainCountNum) {
-              const tntAddresses = (await publicClient.readContract({
-                address: factoryAddress as `0x${string}`,
-                abi: TNTFactoryAbi,
-                functionName: "getPageDeployedTNTs",
-                args: [
-                  address as `0x${string}`,
-                  BigInt(chainStartIndex),
-                  BigInt(chainEndIndex),
-                ],
-              })) as `0x${string}`[];
-
-              const chainTNTs = await fetchTNTDetailsForAddresses(
-                tntAddresses,
-                chainId,
-                publicClient
-              );
-
-              allTNTs = allTNTs.concat(chainTNTs);
-              remainingItems -= chainTNTs.length;
-            }
-
-            currentIndex += chainCountNum;
-          } catch (error) {
-            console.error(`Error fetching TNTs for chain ${chainId}:`, error);
-          }
-        }
-
-        setOwnedTNTs(allTNTs);
+        console.log(`Showing ${paginatedTNTs.length} TNTs for page ${page}`);
+        setOwnedTNTs(paginatedTNTs);
       } catch (error) {
         console.error("Error fetching paginated TNTs:", error);
         setError("Failed to fetch TNTs. Please try again later.");
@@ -188,7 +186,7 @@ export default function MyTNTsPage() {
         setIsLoading(false);
       }
     },
-    [address, pagination.itemsPerPage, fetchTotalCount]
+    [address, pagination.itemsPerPage]
   );
 
   const fetchTNTDetailsForAddresses = async (
