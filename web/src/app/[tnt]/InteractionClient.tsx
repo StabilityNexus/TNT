@@ -8,9 +8,11 @@ import Image from "next/image";
 import { getPublicClient } from "@wagmi/core";
 import { config } from "@/utils/config";
 import { useSearchParams } from "next/navigation";
-import { TNTAbi } from "@/contractsABI/TNT";
+import { TNTAbi } from "@/utils/contractsABI/TNT";
+import { TNTRoleManager } from "@/utils/roleManager";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { useAccount } from "wagmi";
 
 interface TokenDetailsState {
   tokenName: string;
@@ -21,13 +23,26 @@ interface TokenDetailsState {
   timestamp: string;
 }
 
+interface UserTokenInfo {
+  activeTokens: { tokenId: number; issuer: string }[];
+  inactiveTokens: { tokenId: number; issuer: string }[];
+  totalTokens: number;
+}
+
 export default function InteractionClient() {
   const searchParams = useSearchParams();
+  const { address } = useAccount();
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingUserTokens, setIsLoadingUserTokens] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [tokenAddress, setTokenAddress] = useState<`0x${string}`>("0x0");
   const [chainId, setChainId] = useState<number>(0);
+  const [userTokens, setUserTokens] = useState<UserTokenInfo>({
+    activeTokens: [],
+    inactiveTokens: [],
+    totalTokens: 0,
+  });
 
   const [tokenDetails, setTokenDetails] = useState<TokenDetailsState>({
     tokenName: "",
@@ -59,42 +74,22 @@ export default function InteractionClient() {
       setIsLoading(true);
       setError(null);
 
-      const publicClient = getPublicClient(config as any, { chainId });
-      if (!publicClient) {
-        throw new Error(`No public client available for chain ${chainId}`);
-      }
+      // Create role manager instance - we'll use a dummy address if user not connected
+      const dummyAddress = "0x0000000000000000000000000000000000000000";
+      const roleManager = new TNTRoleManager(
+        tokenAddress, 
+        chainId, 
+        (dummyAddress) as `0x${string}`
+      );
 
-      // Fetch token details
-      const [name, symbol, revokable, imageURL] = await Promise.all([
-        publicClient.readContract({
-          address: tokenAddress,
-          abi: TNTAbi,
-          functionName: "name",
-        }) as Promise<string>,
-        publicClient.readContract({
-          address: tokenAddress,
-          abi: TNTAbi,
-          functionName: "symbol",
-        }) as Promise<string>,
-        publicClient.readContract({
-          address: tokenAddress,
-          abi: TNTAbi,
-          functionName: "revokable",
-        }) as Promise<boolean>,
-        publicClient
-          .readContract({
-            address: tokenAddress,
-            abi: TNTAbi,
-            functionName: "imageURL",
-          })
-          .catch(() => "") as Promise<string>,
-      ]);
+      // Fetch token details using role manager
+      const tokenInfo = await roleManager.getTokenInfo();
 
       setTokenDetails({
-        tokenName: name,
-        tokenSymbol: symbol,
-        revokable: revokable,
-        imageURL: imageURL,
+        tokenName: tokenInfo.name,
+        tokenSymbol: tokenInfo.symbol,
+        revokable: tokenInfo.revokable,
+        imageURL: tokenInfo.imageURL,
         transactionHash: tokenAddress,
         timestamp: new Date().toISOString(),
       });
@@ -106,11 +101,83 @@ export default function InteractionClient() {
     }
   }, [tokenAddress, chainId]);
 
+  const fetchUserTokens = useCallback(async () => {
+    if (!tokenAddress || !chainId || !address) {
+      setUserTokens({ activeTokens: [], inactiveTokens: [], totalTokens: 0 });
+      return;
+    }
+
+    try {
+      setIsLoadingUserTokens(true);
+      const publicClient = getPublicClient(config as any, { chainId });
+      if (!publicClient) return;
+
+      // Get user's tokens from this specific TNT contract
+      const [allTokensData, activeTokensData] = await Promise.all([
+        publicClient.readContract({
+          address: tokenAddress,
+          abi: TNTAbi,
+          functionName: "getAllIssuedTokens",
+          args: [address],
+        }) as Promise<[bigint[], `0x${string}`[]]>,
+        publicClient.readContract({
+          address: tokenAddress,
+          abi: TNTAbi,
+          functionName: "getActiveTokens",
+          args: [address],
+        }) as Promise<[bigint[], `0x${string}`[]]>,
+      ]);
+
+      const [allTokenIds, allIssuers] = allTokensData;
+      const [activeTokenIds, activeIssuers] = activeTokensData;
+
+      if (allTokenIds.length > 0) {
+        const activeTokenNumbers = activeTokenIds.map(id => Number(id));
+        const allTokenNumbers = allTokenIds.map(id => Number(id));
+
+        const activeTokens = activeTokenNumbers.map((tokenId, idx) => ({
+          tokenId,
+          issuer: activeIssuers[idx] || '0x0',
+        }));
+
+        const inactiveTokens = allTokenNumbers
+          .filter(tokenId => !activeTokenNumbers.includes(tokenId))
+          .map(tokenId => {
+            const originalIndex = allTokenNumbers.indexOf(tokenId);
+            return {
+              tokenId,
+              issuer: allIssuers[originalIndex] || '0x0',
+            };
+          });
+
+        setUserTokens({
+          activeTokens,
+          inactiveTokens,
+          totalTokens: allTokenNumbers.length,
+        });
+      } else {
+        setUserTokens({ activeTokens: [], inactiveTokens: [], totalTokens: 0 });
+      }
+    } catch (error) {
+      console.error("Error fetching user tokens:", error);
+      setUserTokens({ activeTokens: [], inactiveTokens: [], totalTokens: 0 });
+    } finally {
+      setIsLoadingUserTokens(false);
+    }
+  }, [tokenAddress, chainId, address]);
+
+  const formatAddress = (address: string) => {
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+
   useEffect(() => {
     if (tokenAddress && chainId) {
       getTokenDetails();
+      if (address) {
+        fetchUserTokens();
+      }
     }
-  }, [tokenAddress, chainId, getTokenDetails]);
+  }, [tokenAddress, chainId, address, getTokenDetails, fetchUserTokens]);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -400,6 +467,176 @@ export default function InteractionClient() {
             </div>
           </CardContent>
         </Card>
+
+        {/* User Token Holdings Section */}
+        {address && (
+          <Card className="bg-[#0B101D] backdrop-blur-sm border border-slate-700/30 max-w-4xl mx-auto overflow-hidden shadow-lg mt-8">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold text-center">
+                Your{" "}
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-emerald-600">
+                  Token Holdings
+                </span>
+              </CardTitle>
+              <p className="text-slate-400 text-center text-sm">
+                Tokens you hold from this TNT contract
+              </p>
+            </CardHeader>
+            
+            <CardContent className="p-6">
+              {isLoadingUserTokens ? (
+                <div className="flex flex-col items-center justify-center space-y-4 py-12">
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-4 h-4 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-4 h-4 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-4 h-4 rounded-full bg-emerald-500 animate-bounce"></div>
+                  </div>
+                  <p className="text-slate-400">Loading your token holdings...</p>
+                </div>
+              ) : userTokens.totalTokens > 0 ? (
+                <div className="space-y-6">
+                  {/* Token Summary */}
+                  <div className="text-center bg-slate-800/30 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-emerald-400">
+                      {userTokens.totalTokens}
+                    </div>
+                    <div className="text-slate-400 text-sm">Total Tokens</div>
+                    {userTokens.activeTokens.length > 0 && (
+                      <div className="text-emerald-300 text-sm mt-1">
+                        {userTokens.activeTokens.length} active
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Active Tokens */}
+                    {userTokens.activeTokens.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-emerald-400 flex items-center">
+                          <div className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></div>
+                          Active Tokens ({userTokens.activeTokens.length})
+                        </h3>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {userTokens.activeTokens.map((token, idx) => (
+                            <div
+                              key={`active-${token.tokenId}-${idx}`}
+                              className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3"
+                            >
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium text-emerald-400 text-lg">
+                                  #{token.tokenId}
+                                </span>
+                                <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-300">
+                                  Active
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-slate-300 font-mono text-sm">
+                                  Issuer: {formatAddress(token.issuer)}
+                                </span>
+                                <Button
+                                  onClick={() => copyToClipboard(token.issuer)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-1 h-8 w-8 text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10"
+                                  title="Copy issuer address"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inactive Tokens */}
+                    {userTokens.inactiveTokens.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-slate-400 flex items-center">
+                          <div className="w-3 h-3 bg-slate-500 rounded-full mr-2"></div>
+                          Inactive Tokens ({userTokens.inactiveTokens.length})
+                        </h3>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {userTokens.inactiveTokens.map((token, idx) => (
+                            <div
+                              key={`inactive-${token.tokenId}-${idx}`}
+                              className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3"
+                            >
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium text-slate-400 text-lg">
+                                  #{token.tokenId}
+                                </span>
+                                <span className="text-xs px-2 py-1 rounded-full bg-slate-500/20 text-slate-400">
+                                  Inactive
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-slate-400 font-mono text-sm">
+                                  Issuer: {formatAddress(token.issuer)}
+                                </span>
+                                <Button
+                                  onClick={() => copyToClipboard(token.issuer)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-1 h-8 w-8 text-slate-500 hover:text-slate-300 hover:bg-slate-700/50"
+                                  title="Copy issuer address"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Refresh Button */}
+                  <div className="text-center pt-4">
+                    <Button
+                      onClick={fetchUserTokens}
+                      variant="outline"
+                      className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/50"
+                      disabled={isLoadingUserTokens}
+                    >
+                      <RefreshCcw className={`h-4 w-4 mr-2 ${isLoadingUserTokens ? 'animate-spin' : ''}`} />
+                      Refresh Holdings
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-slate-500/20 rounded-full flex items-center justify-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-slate-400"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 text-white">
+                    No Token Holdings
+                  </h3>
+                  <p className="text-slate-400 max-w-sm mx-auto">
+                    You don't hold any tokens from this TNT contract. When tokens are issued to you, they will appear here.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

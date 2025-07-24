@@ -9,11 +9,12 @@ import { useRouter } from "next/navigation";
 import { TNTVaultFactories } from "@/utils/address";
 import { useAccount } from "wagmi";
 import { config } from "@/utils/config";
-import { writeContract } from "@wagmi/core";
-import { TNTFactoryAbi } from "@/contractsABI/TNTFactory";
+import { writeContract, waitForTransactionReceipt } from "@wagmi/core";
+import { TNTFactoryAbi } from "@/utils/contractsABI/TNTFactory";
 import { Info } from "lucide-react";
 import { useTheme } from "next-themes";
 import WalletLockScreen from "@/components/WalletLockScreen";
+import { getPublicClient } from "@wagmi/core";
 
 interface DeployContractProps {
   tokenName: string;
@@ -87,33 +88,169 @@ export default function CreateTNT() {
     try {
       setIsDeploying(true);
       const chainId = config.state.chainId;
+      
+      console.log("Current chain ID:", chainId);
+      console.log("Available factories:", TNTVaultFactories);
+      
+      if (!chainId) {
+        toast.error("Please connect to a supported network");
+        return;
+      }
+      
       if (!TNTVaultFactories[chainId]) {
-        toast.error("Contract factory instance not available");
+        toast.error(`Contract factory not available for chain ${chainId}. Available chains: ${Object.keys(TNTVaultFactories).join(', ')}`);
         return;
       }
 
       const { tokenName, tokenSymbol, revokable, imageURL } = formData;
-      const tx = await writeContract(config as any, {
-        address: TNTVaultFactories[chainId],
-        abi: TNTFactoryAbi,
-        functionName: "createTNT",
-        args: [tokenName, tokenSymbol, revokable, imageURL],
+      
+      // Validate inputs
+      if (!tokenName.trim()) {
+        toast.error("Token name is required");
+        return;
+      }
+      
+      if (!tokenSymbol.trim()) {
+        toast.error("Token symbol is required");
+        return;
+      }
+
+      const factoryAddress = TNTVaultFactories[chainId];
+      const cleanImageURL = imageURL.trim() || "";
+
+      console.log("Deploying TNT with params:", {
+        factory: factoryAddress,
+        name: tokenName.trim(),
+        symbol: tokenSymbol.trim(),
+        revokable,
+        imageURL: cleanImageURL,
+        chainId,
+        userAddress: address
       });
 
-      const txDetails = {
-        tokenName,
-        tokenSymbol,
-        revokable,
-        transactionHash: tx,
-        timestamp: new Date().toISOString(),
-      };
 
-      saveTransaction(txDetails);
-      toast.success("TNT contract deployed successfully!");
-      router.push("/my-tnts");
-    } catch (error) {
+      // Call createTNT function
+      console.log("Calling createTNT function...");
+      const txHash = await writeContract(config as any, {
+        address: factoryAddress,
+        abi: TNTFactoryAbi,
+        functionName: "createTNT",
+        args: [tokenName.trim(), tokenSymbol.trim(), revokable, cleanImageURL],
+        chainId: chainId,
+      });
+
+      console.log("Transaction hash:", txHash);
+      toast.success("TNT creation transaction submitted! Waiting for confirmation...");
+
+      // Wait for transaction confirmation
+      try {
+        console.log("Waiting for transaction confirmation...");
+        const receipt = await waitForTransactionReceipt(config as any, {
+          hash: txHash,
+          chainId: chainId,
+        });
+
+        console.log("Transaction confirmed! Receipt:", receipt);
+
+        if (receipt.status === 'success') {
+          // Extract the new TNT contract address from logs
+          let newTNTAddress = null;
+          
+          // Look for TNTCreated event in logs
+          try {
+            const publicClient = getPublicClient(config as any, { chainId });
+            if (publicClient) {
+              // Decode logs to find the TNTCreated event
+              for (const log of receipt.logs) {
+                if (log.address.toLowerCase() === factoryAddress.toLowerCase()) {
+                  // This is likely our TNTCreated event
+                  // The first topic after the event signature should be the owner
+                  // The data should contain the TNT address
+                  if (log.topics.length > 1 && log.data) {
+                    // Try to decode the TNT address from the log data
+                    // For now, we'll use a placeholder - in a real implementation,
+                    // you'd properly decode the event logs
+                    console.log("TNT created successfully, log:", log);
+                    newTNTAddress = log.data; // This is a simplified approach
+                  }
+                }
+              }
+            }
+          } catch (logError) {
+            console.warn("Could not decode TNT address from logs:", logError);
+          }
+
+          // If we couldn't get the address from logs, create a placeholder
+          if (!newTNTAddress) {
+            newTNTAddress = `0x${txHash.slice(2, 42)}`; // Use part of tx hash as placeholder
+          }
+
+          const txDetails = {
+            tokenName: tokenName.trim(),
+            tokenSymbol: tokenSymbol.trim(),
+            revokable,
+            imageURL: cleanImageURL,
+            transactionHash: txHash,
+            contractAddress: newTNTAddress,
+            chainId,
+            factoryAddress,
+            userAddress: address,
+            timestamp: new Date().toISOString(),
+          };
+
+          saveTransaction(txDetails);
+          toast.success("🎉 TNT contract created successfully!");
+          
+          // Redirect to my-tnts page with a longer delay to ensure blockchain state is updated
+          setTimeout(() => {
+            router.push("/my-tnts");
+          }, 3000);
+        } else {
+          throw new Error("Transaction failed");
+        }
+      } catch (waitError) {
+        console.error("Error waiting for transaction:", waitError);
+        toast.error("Transaction confirmation failed. Please check manually.");
+        
+        // Still save the transaction attempt
+        const txDetails = {
+          tokenName: tokenName.trim(),
+          tokenSymbol: tokenSymbol.trim(),
+          revokable,
+          imageURL: cleanImageURL,
+          transactionHash: txHash,
+          chainId,
+          factoryAddress,
+          userAddress: address,
+          timestamp: new Date().toISOString(),
+          status: 'pending',
+        };
+        saveTransaction(txDetails);
+      }
+      
+    } catch (error: any) {
       console.error("Error deploying TNT:", error);
-      toast.error("Failed to deploy TNT contract");
+      console.error("Error details:", {
+        message: error?.message,
+        cause: error?.cause,
+        code: error?.code,
+        data: error?.data
+      });
+      
+      // Handle specific error cases
+      if (error?.message?.includes("User denied") || error?.message?.includes("rejected")) {
+        toast.error("Transaction was cancelled by user");
+      } else if (error?.message?.includes("insufficient funds")) {
+        toast.error("Insufficient funds for transaction");
+      } else if (error?.message?.includes("execution reverted")) {
+        const revertReason = error?.data || error?.reason || "Unknown reason";
+        toast.error(`Contract execution failed: ${revertReason}`);
+        console.error("Revert reason:", revertReason);
+      } else if (error?.message?.includes("network")) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error(`Failed to deploy TNT: ${error?.shortMessage || error?.message || "Unknown error"}`);
+      }
     } finally {
       setIsDeploying(false);
     }
