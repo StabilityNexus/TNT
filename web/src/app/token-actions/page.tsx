@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAccount } from "wagmi";
 import { writeContract } from "@wagmi/core";
 import { TNTAbi } from "@/utils/contractsABI/TNT";
 import toast from "react-hot-toast";
-import WalletLockScreen from "@/components/WalletLockScreen";
-import { TNTRoleManager, TokenPermissions, UserRole } from "@/utils/roleManager";
+import {
+  TNTRoleManager,
+  TokenPermissions,
+  UserRole,
+} from "@/utils/roleManager";
 import { config } from "@/utils/config";
 import { getPublicClient } from "@wagmi/core";
 
@@ -51,7 +54,9 @@ export default function TokenActionsPage() {
   const [revokeTokenId, setRevokeTokenId] = useState("");
   const [burnTokenId, setBurnTokenId] = useState("");
   const [grantRoleAddress, setGrantRoleAddress] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"minter" | "revoker">("minter");
+  const [selectedRole, setSelectedRole] = useState<"minter" | "revoker">(
+    "minter"
+  );
 
   const [isIssuing, setIsIssuing] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
@@ -61,12 +66,13 @@ export default function TokenActionsPage() {
   // Recipients section state
   const [recipients, setRecipients] = useState<RecipientInfo[]>([]);
   const [isLoadingRecipients, setIsLoadingRecipients] = useState(false);
-  const [recipientsPagination, setRecipientsPagination] = useState<RecipientsPagination>({
-    currentPage: 1,
-    totalPages: 0,
-    totalCount: 0,
-    itemsPerPage: 10,
-  });
+  const [recipientsPagination, setRecipientsPagination] =
+    useState<RecipientsPagination>({
+      currentPage: 1,
+      totalPages: 0,
+      totalCount: 0,
+      itemsPerPage: 10,
+    });
 
   useEffect(() => {
     setMounted(true);
@@ -90,10 +96,14 @@ export default function TokenActionsPage() {
   useEffect(() => {
     const loadPermissions = async () => {
       if (!contractAddress || !chainId || !address) return;
-      
+
       setIsLoadingPermissions(true);
       try {
-        const roleManager = new TNTRoleManager(contractAddress, chainId, address);
+        const roleManager = new TNTRoleManager(
+          contractAddress,
+          chainId,
+          address
+        );
         const [perms, roles, tokenInfo] = await Promise.all([
           roleManager.getTokenPermissions(),
           roleManager.getUserRoles(),
@@ -111,6 +121,128 @@ export default function TokenActionsPage() {
 
     loadPermissions();
   }, [contractAddress, chainId, address]);
+
+  const fetchRecipients = useCallback(async (page: number) => {
+    if (!contractAddress || !chainId) return;
+
+    try {
+      setIsLoadingRecipients(true);
+      const publicClient = getPublicClient(config as any, { chainId });
+      if (!publicClient) return;
+
+      // Get total participants count
+      const totalCount = (await publicClient.readContract({
+        address: contractAddress,
+        abi: TNTAbi,
+        functionName: "getAllParticipantsCount",
+      })) as bigint;
+
+      const count = Number(totalCount);
+      const totalPages = Math.ceil(count / recipientsPagination.itemsPerPage);
+
+      if (count === 0) {
+        setRecipients([]);
+        setRecipientsPagination((prev) => ({
+          ...prev,
+          currentPage: page,
+          totalPages: 0,
+          totalCount: 0,
+        }));
+        return;
+      }
+
+      // Calculate start and end indices for pagination
+      const startIndex = (page - 1) * recipientsPagination.itemsPerPage;
+      const endIndex = Math.min(
+        startIndex + recipientsPagination.itemsPerPage,
+        count
+      );
+
+      // Get recipients for current page
+      const recipientAddresses = (await publicClient.readContract({
+        address: contractAddress,
+        abi: TNTAbi,
+        functionName: "getRecipients",
+        args: [BigInt(startIndex), BigInt(endIndex)],
+      })) as `0x${string}`[];
+
+      // Get token details for each recipient
+      const recipientInfoPromises = recipientAddresses.map(
+        async (recipientAddress) => {
+          try {
+            const [allTokensData, activeTokensData] = await Promise.all([
+              publicClient.readContract({
+                address: contractAddress,
+                abi: TNTAbi,
+                functionName: "getAllIssuedTokens",
+                args: [recipientAddress],
+              }) as Promise<[bigint[], `0x${string}`[]]>,
+              publicClient.readContract({
+                address: contractAddress,
+                abi: TNTAbi,
+                functionName: "getActiveTokens",
+                args: [recipientAddress],
+              }) as Promise<[bigint[], `0x${string}`[]]>,
+            ]);
+
+            const [allTokenIds, allIssuers] = allTokensData;
+            const [activeTokenIds] = activeTokensData;
+
+            // Convert to numbers for easier comparison
+            const activeTokenNumbers = activeTokenIds.map((id) => Number(id));
+
+            return {
+              address: recipientAddress,
+              tokenIds: allTokenIds.map((id) => Number(id)),
+              issuers: allIssuers,
+              activeTokenIds: activeTokenNumbers,
+              hasActiveTokens: activeTokenIds.length > 0,
+            };
+          } catch (error) {
+            console.error(
+              `Error fetching tokens for ${recipientAddress}:`,
+              error
+            );
+            return {
+              address: recipientAddress,
+              tokenIds: [],
+              issuers: [],
+              activeTokenIds: [],
+              hasActiveTokens: false,
+            };
+          }
+        }
+      );
+
+      const recipientInfos = await Promise.all(recipientInfoPromises);
+
+      setRecipients(recipientInfos);
+      setRecipientsPagination((prev) => ({
+        ...prev,
+        currentPage: page,
+        totalPages,
+        totalCount: count,
+      }));
+    } catch (error) {
+      console.error("Error fetching recipients:", error);
+      toast.error("Failed to fetch recipients");
+    } finally {
+      setIsLoadingRecipients(false);
+    }
+  }, [contractAddress, chainId, recipientsPagination.itemsPerPage]);
+
+  const handleRecipientsPageChange = (page: number) => {
+    if (page >= 1 && page <= recipientsPagination.totalPages) {
+      fetchRecipients(page);
+    }
+  };
+
+  // Load recipients when component mounts or contract info changes
+  useEffect(() => {
+    if (contractAddress && chainId && !isLoadingPermissions) {
+      fetchRecipients(1);
+    }
+  }, [contractAddress, chainId, isLoadingPermissions, fetchRecipients]);
 
   const handleIssueToken = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +281,9 @@ export default function TokenActionsPage() {
       return;
     }
     if (!permissions.canRevoke) {
-      toast.error("You don't have permission to revoke tokens or token is not revokable");
+      toast.error(
+        "You don't have permission to revoke tokens or token is not revokable"
+      );
       return;
     }
     try {
@@ -216,7 +350,8 @@ export default function TokenActionsPage() {
     }
     try {
       setIsGrantingRole(true);
-      const functionName = selectedRole === "minter" ? "grantMinterRole" : "grantRevokerRole";
+      const functionName =
+        selectedRole === "minter" ? "grantMinterRole" : "grantRevokerRole";
       const tx = await writeContract(config as any, {
         address: contractAddress,
         abi: TNTAbi,
@@ -224,7 +359,11 @@ export default function TokenActionsPage() {
         args: [grantRoleAddress],
         chainId: chainId,
       });
-      toast.success(`${selectedRole === "minter" ? "Minter" : "Revoker"} role granted successfully!`);
+      toast.success(
+        `${
+          selectedRole === "minter" ? "Minter" : "Revoker"
+        } role granted successfully!`
+      );
       console.log("Grant role tx:", tx);
       setGrantRoleAddress("");
     } catch (error) {
@@ -244,130 +383,13 @@ export default function TokenActionsPage() {
     }
   };
 
-  const fetchRecipients = async (page: number) => {
-    if (!contractAddress || !chainId) return;
-
-    try {
-      setIsLoadingRecipients(true);
-      const publicClient = getPublicClient(config as any, { chainId });
-      if (!publicClient) return;
-
-      // Get total participants count
-      const totalCount = await publicClient.readContract({
-        address: contractAddress,
-        abi: TNTAbi,
-        functionName: "getAllParticipantsCount",
-      }) as bigint;
-
-      const count = Number(totalCount);
-      const totalPages = Math.ceil(count / recipientsPagination.itemsPerPage);
-      
-      if (count === 0) {
-        setRecipients([]);
-        setRecipientsPagination(prev => ({
-          ...prev,
-          currentPage: page,
-          totalPages: 0,
-          totalCount: 0,
-        }));
-        return;
-      }
-
-      // Calculate start and end indices for pagination
-      const startIndex = (page - 1) * recipientsPagination.itemsPerPage;
-      const endIndex = Math.min(startIndex + recipientsPagination.itemsPerPage, count);
-
-      // Get recipients for current page
-      const recipientAddresses = await publicClient.readContract({
-        address: contractAddress,
-        abi: TNTAbi,
-        functionName: "getRecipients",
-        args: [BigInt(startIndex), BigInt(endIndex)],
-      }) as `0x${string}`[];
-
-      // Get token details for each recipient
-      const recipientInfoPromises = recipientAddresses.map(async (recipientAddress) => {
-        try {
-          const [allTokensData, activeTokensData] = await Promise.all([
-            publicClient.readContract({
-              address: contractAddress,
-              abi: TNTAbi,
-              functionName: "getAllIssuedTokens",
-              args: [recipientAddress],
-            }) as Promise<[bigint[], `0x${string}`[]]>,
-            publicClient.readContract({
-              address: contractAddress,
-              abi: TNTAbi,
-              functionName: "getActiveTokens",
-              args: [recipientAddress],
-            }) as Promise<[bigint[], `0x${string}`[]]>,
-          ]);
-
-          const [allTokenIds, allIssuers] = allTokensData;
-          const [activeTokenIds] = activeTokensData;
-
-          // Convert to numbers for easier comparison
-          const activeTokenNumbers = activeTokenIds.map(id => Number(id));
-
-          return {
-            address: recipientAddress,
-            tokenIds: allTokenIds.map(id => Number(id)),
-            issuers: allIssuers,
-            activeTokenIds: activeTokenNumbers,
-            hasActiveTokens: activeTokenIds.length > 0,
-          };
-        } catch (error) {
-          console.error(`Error fetching tokens for ${recipientAddress}:`, error);
-          return {
-            address: recipientAddress,
-            tokenIds: [],
-            issuers: [],
-            activeTokenIds: [],
-            hasActiveTokens: false,
-          };
-        }
-      });
-
-      const recipientInfos = await Promise.all(recipientInfoPromises);
-      
-      setRecipients(recipientInfos);
-      setRecipientsPagination(prev => ({
-        ...prev,
-        currentPage: page,
-        totalPages,
-        totalCount: count,
-      }));
-
-    } catch (error) {
-      console.error("Error fetching recipients:", error);
-      toast.error("Failed to fetch recipients");
-    } finally {
-      setIsLoadingRecipients(false);
-    }
-  };
-
-  // Load recipients when component mounts or contract info changes
-  useEffect(() => {
-    if (contractAddress && chainId && !isLoadingPermissions) {
-      fetchRecipients(1);
-    }
-  }, [contractAddress, chainId, isLoadingPermissions]);
-
-  const handleRecipientsPageChange = (page: number) => {
-    if (page >= 1 && page <= recipientsPagination.totalPages) {
-      fetchRecipients(page);
-    }
-  };
-
   const formatAddress = (address: string) => {
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    return `${address.substring(0, 6)}...${address.substring(
+      address.length - 4
+    )}`;
   };
 
   if (!mounted) return null;
-
-  if (!address) {
-    return <WalletLockScreen />;
-  }
 
   if (isLoadingPermissions) {
     return (
@@ -385,7 +407,11 @@ export default function TokenActionsPage() {
   }
 
   // Check if user has any permissions at all
-  const hasAnyPermission = permissions.canIssue || permissions.canRevoke || permissions.canBurn || permissions.canGrantRoles;
+  const hasAnyPermission =
+    permissions.canIssue ||
+    permissions.canRevoke ||
+    permissions.canBurn ||
+    permissions.canGrantRoles;
 
   if (!hasAnyPermission) {
     return (
@@ -415,9 +441,12 @@ export default function TokenActionsPage() {
                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold mb-4">No Token Actions Available</h2>
+            <h2 className="text-2xl font-bold mb-4">
+              No Token Actions Available
+            </h2>
             <p className="text-slate-400 mb-4">
-              You don't have permission to perform any token actions. Contact the token administrator to get the appropriate roles.
+              You don't have permission to perform any token actions. Contact
+              the token administrator to get the appropriate roles.
             </p>
             <div className="text-sm text-slate-500 bg-slate-800/50 p-3 rounded-lg">
               <p className="font-medium mb-2">Your current status:</p>
@@ -438,7 +467,7 @@ export default function TokenActionsPage() {
   const visibleBoxes = [
     true, // Issue token - always visible
     isTokenRevokable, // Revoke token - only if revokable
-    true, // Burn token - always visible  
+    true, // Burn token - always visible
     true, // Grant role - always visible
   ].filter(Boolean).length;
 
@@ -474,22 +503,30 @@ export default function TokenActionsPage() {
           <p className="text-slate-400">
             Manage your TNT tokens based on your permissions
           </p>
-          
+
           {/* User Role Badge */}
           <div className="flex justify-center mt-4">
             <div className="inline-flex items-center gap-2 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700/40">
               <span className="text-sm text-slate-300">Your roles:</span>
               {userRoles.hasAdminRole && (
-                <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">Admin</span>
+                <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">
+                  Admin
+                </span>
               )}
               {userRoles.hasMinterRole && (
-                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full">Minter</span>
+                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full">
+                  Minter
+                </span>
               )}
               {userRoles.hasRevokerRole && (
-                <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded-full">Revoker</span>
+                <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded-full">
+                  Revoker
+                </span>
               )}
               {userRoles.isRecipient && (
-                <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">Holder</span>
+                <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">
+                  Holder
+                </span>
               )}
             </div>
           </div>
@@ -540,7 +577,11 @@ export default function TokenActionsPage() {
                 disabled={isIssuing || !permissions.canIssue}
                 className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 rounded-xl text-white font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isIssuing ? "Issuing..." : !permissions.canIssue ? "No Permission" : "Issue Token"}
+                {isIssuing
+                  ? "Issuing..."
+                  : !permissions.canIssue
+                  ? "No Permission"
+                  : "Issue Token"}
               </button>
             </form>
           </div>
@@ -590,7 +631,11 @@ export default function TokenActionsPage() {
                   disabled={isRevoking || !permissions.canRevoke}
                   className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 rounded-xl text-white font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isRevoking ? "Revoking..." : !permissions.canRevoke ? "No Permission" : "Revoke Token"}
+                  {isRevoking
+                    ? "Revoking..."
+                    : !permissions.canRevoke
+                    ? "No Permission"
+                    : "Revoke Token"}
                 </button>
               </form>
             </div>
@@ -644,7 +689,11 @@ export default function TokenActionsPage() {
                 disabled={isBurning || !permissions.canBurn}
                 className="w-full py-2.5 px-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 rounded-xl text-white font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isBurning ? "Burning..." : !permissions.canBurn ? "No Permission" : "Burn Token"}
+                {isBurning
+                  ? "Burning..."
+                  : !permissions.canBurn
+                  ? "No Permission"
+                  : "Burn Token"}
               </button>
             </form>
           </div>
@@ -697,19 +746,25 @@ export default function TokenActionsPage() {
                 </label>
                 <select
                   value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value as "minter" | "revoker")}
+                  onChange={(e) =>
+                    setSelectedRole(e.target.value as "minter" | "revoker")
+                  }
                   disabled={!permissions.canGrantRoles}
                   className="w-full bg-slate-800/80 border-0 text-white rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-purple-500/30 transition-all duration-200 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                    backgroundPosition: 'right 0.5rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1.5em 1.5em',
-                    paddingRight: '2.5rem'
+                    backgroundPosition: "right 0.5rem center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "1.5em 1.5em",
+                    paddingRight: "2.5rem",
                   }}
                 >
-                  <option value="minter" className="bg-slate-800 text-white">Minter Role</option>
-                  <option value="revoker" className="bg-slate-800 text-white">Revoker Role</option>
+                  <option value="minter" className="bg-slate-800 text-white">
+                    Minter Role
+                  </option>
+                  <option value="revoker" className="bg-slate-800 text-white">
+                    Revoker Role
+                  </option>
                 </select>
               </div>
               <button
@@ -717,7 +772,11 @@ export default function TokenActionsPage() {
                 disabled={isGrantingRole || !permissions.canGrantRoles}
                 className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 rounded-xl text-white font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isGrantingRole ? "Granting..." : !permissions.canGrantRoles ? "No Permission" : "Grant Role"}
+                {isGrantingRole
+                  ? "Granting..."
+                  : !permissions.canGrantRoles
+                  ? "No Permission"
+                  : "Grant Role"}
               </button>
             </form>
           </div>
@@ -751,8 +810,16 @@ export default function TokenActionsPage() {
               {/* Pagination Info */}
               <div className="flex justify-between items-center mb-6 px-2">
                 <p className="text-sm text-slate-400">
-                  Showing {(recipientsPagination.currentPage - 1) * recipientsPagination.itemsPerPage + 1} to{" "}
-                  {Math.min(recipientsPagination.currentPage * recipientsPagination.itemsPerPage, recipientsPagination.totalCount)}{" "}
+                  Showing{" "}
+                  {(recipientsPagination.currentPage - 1) *
+                    recipientsPagination.itemsPerPage +
+                    1}{" "}
+                  to{" "}
+                  {Math.min(
+                    recipientsPagination.currentPage *
+                      recipientsPagination.itemsPerPage,
+                    recipientsPagination.totalCount
+                  )}{" "}
                   of {recipientsPagination.totalCount} recipients
                 </p>
               </div>
@@ -767,7 +834,13 @@ export default function TokenActionsPage() {
                     {/* Address with copy button */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${recipient.hasActiveTokens ? 'bg-emerald-500' : 'bg-slate-500'}`}></div>
+                        <div
+                          className={`w-3 h-3 rounded-full ${
+                            recipient.hasActiveTokens
+                              ? "bg-emerald-500"
+                              : "bg-slate-500"
+                          }`}
+                        ></div>
                         <span className="text-white font-mono text-sm">
                           {formatAddress(recipient.address)}
                         </span>
@@ -788,7 +861,14 @@ export default function TokenActionsPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         >
-                          <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                          <rect
+                            width="14"
+                            height="14"
+                            x="8"
+                            y="8"
+                            rx="2"
+                            ry="2"
+                          />
                           <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
                         </svg>
                       </button>
@@ -796,84 +876,113 @@ export default function TokenActionsPage() {
 
                     {/* Status */}
                     <div className="mb-3">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        recipient.hasActiveTokens 
-                          ? 'bg-emerald-500/20 text-emerald-300' 
-                          : 'bg-slate-500/20 text-slate-400'
-                      }`}>
-                        {recipient.hasActiveTokens ? 'Active Tokens' : 'No Active Tokens'}
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          recipient.hasActiveTokens
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : "bg-slate-500/20 text-slate-400"
+                        }`}
+                      >
+                        {recipient.hasActiveTokens
+                          ? "Active Tokens"
+                          : "No Active Tokens"}
                       </span>
                     </div>
 
                     {/* Token Details */}
                     <div className="space-y-2">
                       <div className="text-xs text-slate-400">
-                        <span className="font-medium">Total Tokens:</span> {recipient.tokenIds.length}
+                        <span className="font-medium">Total Tokens:</span>{" "}
+                        {recipient.tokenIds.length}
                         {recipient.hasActiveTokens && (
                           <span className="ml-2 text-emerald-400">
                             ({recipient.activeTokenIds.length} active)
                           </span>
                         )}
                       </div>
-                      
+
                       {recipient.tokenIds.length > 0 && (
                         <div className="space-y-1">
-                          <div className="text-xs text-slate-400 font-medium">Token IDs & Issuers:</div>
+                          <div className="text-xs text-slate-400 font-medium">
+                            Token IDs & Issuers:
+                          </div>
                           <div className="max-h-24 overflow-y-auto space-y-1">
-                            {recipient.tokenIds.slice(0, 5).map((tokenId, idx) => {
-                              const isActive = recipient.activeTokenIds.includes(tokenId);
-                              const issuerAddress = recipient.issuers[idx] || '0x0';
-                              
-                              return (
-                                <div key={tokenId} className={`text-xs rounded p-2 border ${
-                                  isActive 
-                                    ? 'bg-emerald-500/10 border-emerald-500/30' 
-                                    : 'bg-slate-800/50 border-slate-700/50'
-                                }`}>
-                                  <div className="flex justify-between items-center mb-1">
-                                    <div className="flex items-center space-x-2">
-                                      <span className={`font-medium ${
-                                        isActive ? 'text-emerald-400' : 'text-amber-400'
-                                      }`}>
-                                        #{tokenId}
+                            {recipient.tokenIds
+                              .slice(0, 5)
+                              .map((tokenId, idx) => {
+                                const isActive =
+                                  recipient.activeTokenIds.includes(tokenId);
+                                const issuerAddress =
+                                  recipient.issuers[idx] || "0x0";
+
+                                return (
+                                  <div
+                                    key={tokenId}
+                                    className={`text-xs rounded p-2 border ${
+                                      isActive
+                                        ? "bg-emerald-500/10 border-emerald-500/30"
+                                        : "bg-slate-800/50 border-slate-700/50"
+                                    }`}
+                                  >
+                                    <div className="flex justify-between items-center mb-1">
+                                      <div className="flex items-center space-x-2">
+                                        <span
+                                          className={`font-medium ${
+                                            isActive
+                                              ? "text-emerald-400"
+                                              : "text-amber-400"
+                                          }`}
+                                        >
+                                          #{tokenId}
+                                        </span>
+                                        <span
+                                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                            isActive
+                                              ? "bg-emerald-500/20 text-emerald-300"
+                                              : "bg-slate-500/20 text-slate-400"
+                                          }`}
+                                        >
+                                          {isActive ? "Active" : "Inactive"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-slate-300 font-mono text-[10px]">
+                                        Issuer: {formatAddress(issuerAddress)}
                                       </span>
-                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                        isActive 
-                                          ? 'bg-emerald-500/20 text-emerald-300' 
-                                          : 'bg-slate-500/20 text-slate-400'
-                                      }`}>
-                                        {isActive ? 'Active' : 'Inactive'}
-                                      </span>
+                                      <button
+                                        onClick={() =>
+                                          copyToClipboard(issuerAddress)
+                                        }
+                                        className="p-1 text-slate-500 hover:text-amber-400 hover:bg-slate-700/50 rounded transition-all duration-200"
+                                        title="Copy issuer address"
+                                      >
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="10"
+                                          height="10"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        >
+                                          <rect
+                                            width="14"
+                                            height="14"
+                                            x="8"
+                                            y="8"
+                                            rx="2"
+                                            ry="2"
+                                          />
+                                          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                                        </svg>
+                                      </button>
                                     </div>
                                   </div>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-slate-300 font-mono text-[10px]">
-                                      Issuer: {formatAddress(issuerAddress)}
-                                    </span>
-                                    <button
-                                      onClick={() => copyToClipboard(issuerAddress)}
-                                      className="p-1 text-slate-500 hover:text-amber-400 hover:bg-slate-700/50 rounded transition-all duration-200"
-                                      title="Copy issuer address"
-                                    >
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="10"
-                                        height="10"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      >
-                                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
                             {recipient.tokenIds.length > 5 && (
                               <div className="text-xs text-slate-500 text-center py-1">
                                 +{recipient.tokenIds.length - 5} more tokens
@@ -891,35 +1000,49 @@ export default function TokenActionsPage() {
               {recipientsPagination.totalPages > 1 && (
                 <div className="flex justify-center items-center gap-2">
                   <button
-                    onClick={() => handleRecipientsPageChange(recipientsPagination.currentPage - 1)}
+                    onClick={() =>
+                      handleRecipientsPageChange(
+                        recipientsPagination.currentPage - 1
+                      )
+                    }
                     disabled={recipientsPagination.currentPage === 1}
                     className="px-3 py-2 text-sm bg-slate-800/50 text-white rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     Previous
                   </button>
-                  
+
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, recipientsPagination.totalPages) }, (_, i) => {
-                      const page = i + 1;
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => handleRecipientsPageChange(page)}
-                          className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-                            page === recipientsPagination.currentPage
-                              ? 'bg-amber-500 text-white'
-                              : 'bg-slate-800/50 text-white hover:bg-slate-700'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      );
-                    })}
+                    {Array.from(
+                      { length: Math.min(5, recipientsPagination.totalPages) },
+                      (_, i) => {
+                        const page = i + 1;
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => handleRecipientsPageChange(page)}
+                            className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                              page === recipientsPagination.currentPage
+                                ? "bg-amber-500 text-white"
+                                : "bg-slate-800/50 text-white hover:bg-slate-700"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      }
+                    )}
                   </div>
 
                   <button
-                    onClick={() => handleRecipientsPageChange(recipientsPagination.currentPage + 1)}
-                    disabled={recipientsPagination.currentPage === recipientsPagination.totalPages}
+                    onClick={() =>
+                      handleRecipientsPageChange(
+                        recipientsPagination.currentPage + 1
+                      )
+                    }
+                    disabled={
+                      recipientsPagination.currentPage ===
+                      recipientsPagination.totalPages
+                    }
                     className="px-3 py-2 text-sm bg-slate-800/50 text-white rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     Next
@@ -948,8 +1071,12 @@ export default function TokenActionsPage() {
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2 text-white">No Recipients Yet</h3>
-              <p className="text-slate-400">No tokens have been issued from this TNT contract yet.</p>
+              <h3 className="text-xl font-bold mb-2 text-white">
+                No Recipients Yet
+              </h3>
+              <p className="text-slate-400">
+                No tokens have been issued from this TNT contract yet.
+              </p>
             </div>
           )}
         </div>

@@ -9,7 +9,6 @@ import { config } from "@/utils/config";
 import { getPublicClient } from "@wagmi/core";
 import { TNTFactoryAbi } from "@/utils/contractsABI/TNTFactory";
 import { TNTAbi } from "@/utils/contractsABI/TNT";
-import WalletLockScreen from "@/components/WalletLockScreen";
 import { TNTCacheManager } from "@/utils/indexedDB";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -315,10 +314,6 @@ export default function ProfilePage() {
   }, [address, fetchPaginatedTNTs]);
 
   if (!mounted) return null;
-
-  if (!address) {
-    return <WalletLockScreen />;
-  }
 
   return (
     <div className="min-h-screen relative bg-black text-white">
