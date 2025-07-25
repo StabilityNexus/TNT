@@ -396,14 +396,16 @@ export default function TokenActionsPage() {
 
   if (isLoadingPermissions) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative bg-black text-white">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="flex items-center justify-center space-x-2">
-            <div className="w-4 h-4 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.3s]"></div>
-            <div className="w-4 h-4 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.15s]"></div>
-            <div className="w-4 h-4 rounded-full bg-amber-500 animate-bounce"></div>
+      <div className="min-h-screen relative bg-black text-white">
+        <div className="container mx-auto py-24 px-4 sm:px-6 z-10 relative max-w-7xl">
+          <div className="flex flex-col items-center justify-center space-y-4 py-20">
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-4 h-4 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.3s]"></div>
+              <div className="w-4 h-4 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.15s]"></div>
+              <div className="w-4 h-4 rounded-full bg-amber-500 animate-bounce"></div>
+            </div>
+            <p className="text-slate-400">Loading permissions...</p>
           </div>
-          <p className="text-slate-400">Loading permissions...</p>
         </div>
       </div>
     );
@@ -418,47 +420,49 @@ export default function TokenActionsPage() {
 
   if (!hasAnyPermission) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative bg-black text-white">
+      <div className="min-h-screen relative bg-black text-white">
         {/* Background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 -left-20 w-72 h-72 bg-purple-700/20 rounded-full filter blur-3xl" />
           <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-amber-500/10 rounded-full filter blur-3xl" />
         </div>
 
-        <div className="max-w-md w-full z-10 text-center">
-          <div className="bg-slate-900/70 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-8">
-            <div className="w-16 h-16 mx-auto mb-6 bg-amber-500/20 rounded-full flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-amber-400"
-              >
-                <path d="M12 1v6m0 6v6" />
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold mb-4">
-              No Token Actions Available
-            </h2>
-            <p className="text-slate-400 mb-4">
-              You don't have permission to perform any token actions. Contact
-              the token administrator to get the appropriate roles.
-            </p>
-            <div className="text-sm text-slate-500 bg-slate-800/50 p-3 rounded-lg">
-              <p className="font-medium mb-2">Your current status:</p>
-              <ul className="space-y-1 text-left">
-                <li>• Admin: {userRoles.hasAdminRole ? "✅" : "❌"}</li>
-                <li>• Minter: {userRoles.hasMinterRole ? "✅" : "❌"}</li>
-                <li>• Revoker: {userRoles.hasRevokerRole ? "✅" : "❌"}</li>
-                <li>• Token Holder: {userRoles.isRecipient ? "✅" : "❌"}</li>
-              </ul>
+        <div className="container mx-auto py-24 px-4 sm:px-6 z-10 relative max-w-7xl">
+          <div className="max-w-md mx-auto text-center">
+            <div className="bg-slate-900/70 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-8">
+              <div className="w-16 h-16 mx-auto mb-6 bg-amber-500/20 rounded-full flex items-center justify-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-amber-400"
+                >
+                  <path d="M12 1v6m0 6v6" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold mb-4">
+                No Token Actions Available
+              </h2>
+              <p className="text-slate-400 mb-4">
+                You don't have permission to perform any token actions. Contact
+                the token administrator to get the appropriate roles.
+              </p>
+              <div className="text-sm text-slate-500 bg-slate-800/50 p-3 rounded-lg">
+                <p className="font-medium mb-2">Your current status:</p>
+                <ul className="space-y-1 text-left">
+                  <li>• Admin: {userRoles.hasAdminRole ? "✅" : "❌"}</li>
+                  <li>• Minter: {userRoles.hasMinterRole ? "✅" : "❌"}</li>
+                  <li>• Revoker: {userRoles.hasRevokerRole ? "✅" : "❌"}</li>
+                  <li>• Token Holder: {userRoles.isRecipient ? "✅" : "❌"}</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -487,23 +491,22 @@ export default function TokenActionsPage() {
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 relative bg-black text-white">
+    <div className="min-h-screen relative bg-black text-white">
       {/* Background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 -left-20 w-72 h-72 bg-purple-700/20 rounded-full filter blur-3xl" />
         <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-amber-500/10 rounded-full filter blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/10 rounded-full filter blur-3xl opacity-60" />
       </div>
 
-      <div className="max-w-7xl mx-auto w-full z-10 relative">
-        <div className="text-center mb-12 pt-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+      <div className="container mx-auto py-24 px-4 sm:px-6 z-10 relative max-w-7xl">
+        <div className="text-center mb-8 mt-2">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">
             Token{" "}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-600">
               Actions
             </span>
           </h1>
-          <p className="text-slate-400">
+          <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
             Manage your TNT tokens based on your permissions
           </p>
 
