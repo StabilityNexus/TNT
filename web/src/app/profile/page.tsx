@@ -7,10 +7,20 @@ import { useAccount } from "wagmi";
 import { TNTVaultFactories } from "@/utils/address";
 import { config } from "@/utils/config";
 import { getPublicClient } from "@wagmi/core";
+import detectEthereumProvider from "@metamask/detect-provider";
+import Web3 from "web3";
 import { TNTFactoryAbi } from "@/utils/contractsABI/TNTFactory";
 import { TNTAbi } from "@/utils/contractsABI/TNT";
 import WalletLockScreen from "@/components/WalletLockScreen";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TNTCacheManager } from "@/utils/indexedDB";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface TNTDetails {
@@ -40,6 +50,7 @@ export default function ProfilePage() {
   });
   const { address } = useAccount();
   const [mounted, setMounted] = useState(false);
+  const [cacheManager] = useState(() => new TNTCacheManager());
 
   useEffect(() => {
     setMounted(true);
@@ -60,43 +71,16 @@ export default function ProfilePage() {
               return 0;
             }
 
-            console.log(`Fetching user TNT count for chain ${chainId}, factory: ${factoryAddress}, user: ${address}`);
+            const count = (await publicClient.readContract({
+              address: factoryAddress as `0x${string}`,
+              abi: TNTFactoryAbi,
+              functionName: "getUserTNTCount",
+              args: [address as `0x${string}`],
+            })) as bigint;
 
-            // Try different approaches in order of preference - use safe functions only
-            try {
-              // Approach 1: Try getUserTNTs function
-              const userTNTs = await publicClient.readContract({
-                address: factoryAddress as `0x${string}`,
-                abi: TNTFactoryAbi,
-                functionName: "getUserTNTs",
-                args: [address as `0x${string}`],
-              }) as `0x${string}`[];
-
-              console.log(`getUserTNTs returned:`, userTNTs);
-              return userTNTs.length;
-            } catch (error1) {
-              console.warn(`getUserTNTs failed for chain ${chainId}:`, error1);
-              
-              try {
-                // Approach 2: Try getUserTNTCount function
-                const count = await publicClient.readContract({
-                  address: factoryAddress as `0x${string}`,
-                  abi: TNTFactoryAbi,
-                  functionName: "getUserTNTCount",
-                  args: [address as `0x${string}`],
-                }) as bigint;
-
-                console.log(`getUserTNTCount returned:`, count);
-                return Number(count);
-              } catch (error2) {
-                console.warn(`getUserTNTCount failed for chain ${chainId}:`, error2);
-                // No more fallbacks - avoid direct mapping access that can revert
-                console.warn(`All safe contract methods failed for chain ${chainId}, returning 0`);
-                return 0;
-              }
-            }
+            return Number(count);
           } catch (error) {
-            console.error(`Error fetching user TNT count for chain ${chainId}:`, error);
+            console.error(`Error fetching count for chain ${chainId}:`, error);
             return 0;
           }
         }
@@ -104,11 +88,10 @@ export default function ProfilePage() {
 
       const results = await Promise.all(chainPromises);
       totalCount = results.reduce((sum, count) => sum + count, 0);
-      console.log(`Total user TNT count across all chains: ${totalCount}`);
 
       return totalCount;
     } catch (error) {
-      console.error("Error fetching total user TNT count:", error);
+      console.error("Error fetching total count:", error);
       return 0;
     }
   }, [address]);
@@ -118,8 +101,30 @@ export default function ProfilePage() {
       try {
         setIsLoading(true);
         setError(null);
-        console.log(`Fetching user TNTs for page ${page}`);
 
+        if (!address) return;
+
+        // Try to get cached data first
+        const cachedResult = await cacheManager.getCachedTNTsPaginated(
+          address,
+          "received",
+          page,
+          pagination.itemsPerPage
+        );
+
+        if (cachedResult) {
+          setOwnedTNTs(cachedResult.data);
+          setPagination((prev) => ({
+            ...prev,
+            currentPage: cachedResult.currentPage,
+            totalPages: cachedResult.totalPages,
+            totalCount: cachedResult.totalCount,
+          }));
+          setIsLoading(false);
+          return;
+        }
+
+        // If no cache, fetch from blockchain
         const totalCount = await fetchTotalCount();
         const totalPages = Math.ceil(totalCount / pagination.itemsPerPage);
 
@@ -131,17 +136,11 @@ export default function ProfilePage() {
         }));
 
         if (totalCount === 0) {
-          console.log("No user TNTs found");
           setOwnedTNTs([]);
           return;
         }
 
-        const startIndex = (page - 1) * pagination.itemsPerPage;
-        const endIndex = Math.min(
-          startIndex + pagination.itemsPerPage,
-          totalCount
-        );
-
+        // Fetch all TNTs for caching
         let allTNTs: TNTDetails[] = [];
 
         for (const [chainId, factoryAddress] of Object.entries(
@@ -156,78 +155,62 @@ export default function ProfilePage() {
               continue;
             }
 
-            console.log(`Fetching user TNTs for chain ${chainId}`);
+            const chainCount = (await publicClient.readContract({
+              address: factoryAddress as `0x${string}`,
+              abi: TNTFactoryAbi,
+              functionName: "getUserTNTCount",
+              args: [address as `0x${string}`],
+            })) as bigint;
 
-            let tntAddresses: `0x${string}`[] = [];
+            const chainCountNum = Number(chainCount);
 
-            // Try different approaches to get TNT addresses
-            try {
-              // Approach 1: Try getUserTNTs function
-              tntAddresses = await publicClient.readContract({
+            if (chainCountNum > 0) {
+              const tntAddresses = (await publicClient.readContract({
                 address: factoryAddress as `0x${string}`,
                 abi: TNTFactoryAbi,
-                functionName: "getUserTNTs",
-                args: [address as `0x${string}`],
-              }) as `0x${string}`[];
+                functionName: "getPageUserTNTs",
+                args: [
+                  address as `0x${string}`,
+                  BigInt(0),
+                  BigInt(chainCountNum),
+                ],
+              })) as `0x${string}`[];
 
-              console.log(`getUserTNTs returned ${tntAddresses.length} addresses:`, tntAddresses);
-            } catch (error1) {
-              console.warn(`getUserTNTs failed for chain ${chainId}:`, error1);
-              
-              try {
-                // Approach 2: Try getPageUserTNTs with full range
-                const count = await publicClient.readContract({
-                  address: factoryAddress as `0x${string}`,
-                  abi: TNTFactoryAbi,
-                  functionName: "getUserTNTCount",
-                  args: [address as `0x${string}`],
-                }) as bigint;
-
-                if (Number(count) > 0) {
-                  tntAddresses = await publicClient.readContract({
-                    address: factoryAddress as `0x${string}`,
-                    abi: TNTFactoryAbi,
-                    functionName: "getPageUserTNTs",
-                    args: [address as `0x${string}`, BigInt(0), count],
-                  }) as `0x${string}`[];
-                  
-                  console.log(`getPageUserTNTs returned ${tntAddresses.length} addresses:`, tntAddresses);
-                }
-              } catch (error2) {
-                console.warn(`getPageUserTNTs failed for chain ${chainId}:`, error2);
-                console.warn(`All safe contract methods failed for fetching TNT addresses on chain ${chainId}`);
-                // No direct mapping access to avoid reverts on empty arrays
-              }
-            }
-
-            if (tntAddresses.length > 0) {
               const chainTNTs = await fetchTNTDetailsForAddresses(
                 tntAddresses,
                 chainId,
                 publicClient
               );
-              console.log(`Fetched details for ${chainTNTs.length} user TNTs on chain ${chainId}`);
+
               allTNTs = allTNTs.concat(chainTNTs);
             }
           } catch (error) {
-            console.error(`Error fetching user TNTs for chain ${chainId}:`, error);
+            console.error(`Error fetching TNTs for chain ${chainId}:`, error);
           }
         }
 
-        console.log(`Total user TNTs found: ${allTNTs.length}`);
-        
-        // Apply pagination to the combined results
+        // Cache all TNTs
+        if (allTNTs.length > 0) {
+          await cacheManager.cacheTNTs(allTNTs, address, "received");
+        }
+
+        // Apply pagination to display
+        const startIndex = (page - 1) * pagination.itemsPerPage;
+        const endIndex = Math.min(
+          startIndex + pagination.itemsPerPage,
+          allTNTs.length
+        );
         const paginatedTNTs = allTNTs.slice(startIndex, endIndex);
-        console.log(`Showing ${paginatedTNTs.length} user TNTs for page ${page}`);
+
         setOwnedTNTs(paginatedTNTs);
       } catch (error) {
-        console.error("Error fetching paginated user TNTs:", error);
+        console.error("Error fetching paginated TNTs:", error);
         setError("Failed to fetch TNTs. Please try again later.");
       } finally {
         setIsLoading(false);
       }
     },
-    [address, pagination.itemsPerPage, fetchTotalCount]
+    [address, pagination.itemsPerPage, fetchTotalCount, cacheManager]
   );
 
   const fetchTNTDetailsForAddresses = async (
@@ -237,19 +220,6 @@ export default function ProfilePage() {
   ): Promise<TNTDetails[]> => {
     const tntPromises = tntAddresses.map(async (tntAddress) => {
       try {
-        // First check if user has active tokens in this contract
-        const hasActive = await publicClient.readContract({
-          address: tntAddress,
-          abi: TNTAbi,
-          functionName: "hasActiveTokens",
-          args: [address],
-        }) as Promise<boolean>;
-
-        // If no active tokens, skip this contract
-        if (!hasActive) {
-          return null;
-        }
-
         const [tokenName, tokenSymbol, imageURL] = await Promise.all([
           publicClient.readContract({
             address: tntAddress,
@@ -265,7 +235,7 @@ export default function ProfilePage() {
             address: tntAddress,
             abi: TNTAbi,
             functionName: "imageURL",
-          }).catch(() => "") as Promise<string>,
+          }) as Promise<string>,
         ]);
 
         return {
@@ -431,7 +401,7 @@ export default function ProfilePage() {
               {ownedTNTs.map((tnt) => (
                 <Card
                   key={`${tnt.chainId}-${tnt.address}`}
-                  className="group bg-[#0B101D] backdrop-blur-sm border border-slate-700/30 rounded-lg overflow-hidden shadow-md hover:shadow-purple-900/10 hover:border-amber-500/20 transition-all duration-300"
+                  className="group bg-gradient-to-b from-slate-800/60 to-slate-900/90 backdrop-blur-sm border border-slate-700/30 rounded-lg overflow-hidden shadow-md hover:shadow-purple-900/10 hover:border-amber-500/20 transition-all duration-300"
                 >
                   {tnt.imageURL ? (
                     <div className="relative w-full h-40 overflow-hidden">
@@ -520,7 +490,7 @@ export default function ProfilePage() {
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
                   variant="outline"
-                  className={`border-slate-700 bg-[#0B101D] text-white hover:bg-slate-700 hover:text-white ${
+                  className={`border-slate-700 bg-slate-800/50 text-white hover:bg-slate-700 hover:text-white ${
                     pagination.currentPage === 1
                       ? "opacity-50 cursor-not-allowed"
                       : ""
@@ -577,7 +547,7 @@ export default function ProfilePage() {
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage === pagination.totalPages}
                   variant="outline"
-                  className={`border-slate-700 bg-[#0B101D] text-white hover:bg-slate-700 hover:text-white ${
+                  className={`border-slate-700 bg-slate-800/50 text-white hover:bg-slate-700 hover:text-white ${
                     pagination.currentPage === pagination.totalPages
                       ? "opacity-50 cursor-not-allowed"
                       : ""
