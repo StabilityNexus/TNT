@@ -122,114 +122,117 @@ export default function TokenActionsPage() {
     loadPermissions();
   }, [contractAddress, chainId, address]);
 
-  const fetchRecipients = useCallback(async (page: number) => {
-    if (!contractAddress || !chainId) return;
+  const fetchRecipients = useCallback(
+    async (page: number) => {
+      if (!contractAddress || !chainId) return;
 
-    try {
-      setIsLoadingRecipients(true);
-      const publicClient = getPublicClient(config as any, { chainId });
-      if (!publicClient) return;
+      try {
+        setIsLoadingRecipients(true);
+        const publicClient = getPublicClient(config as any, { chainId });
+        if (!publicClient) return;
 
-      // Get total participants count
-      const totalCount = (await publicClient.readContract({
-        address: contractAddress,
-        abi: TNTAbi,
-        functionName: "getAllParticipantsCount",
-      })) as bigint;
+        // Get total participants count
+        const totalCount = (await publicClient.readContract({
+          address: contractAddress,
+          abi: TNTAbi,
+          functionName: "getAllParticipantsCount",
+        })) as bigint;
 
-      const count = Number(totalCount);
-      const totalPages = Math.ceil(count / recipientsPagination.itemsPerPage);
+        const count = Number(totalCount);
+        const totalPages = Math.ceil(count / recipientsPagination.itemsPerPage);
 
-      if (count === 0) {
-        setRecipients([]);
+        if (count === 0) {
+          setRecipients([]);
+          setRecipientsPagination((prev) => ({
+            ...prev,
+            currentPage: page,
+            totalPages: 0,
+            totalCount: 0,
+          }));
+          return;
+        }
+
+        // Calculate start and end indices for pagination
+        const startIndex = (page - 1) * recipientsPagination.itemsPerPage;
+        const endIndex = Math.min(
+          startIndex + recipientsPagination.itemsPerPage,
+          count
+        );
+
+        // Get recipients for current page
+        const recipientAddresses = (await publicClient.readContract({
+          address: contractAddress,
+          abi: TNTAbi,
+          functionName: "getRecipients",
+          args: [BigInt(startIndex), BigInt(endIndex)],
+        })) as `0x${string}`[];
+
+        // Get token details for each recipient
+        const recipientInfoPromises = recipientAddresses.map(
+          async (recipientAddress) => {
+            try {
+              const [allTokensData, activeTokensData] = await Promise.all([
+                publicClient.readContract({
+                  address: contractAddress,
+                  abi: TNTAbi,
+                  functionName: "getAllIssuedTokens",
+                  args: [recipientAddress],
+                }) as Promise<[bigint[], `0x${string}`[]]>,
+                publicClient.readContract({
+                  address: contractAddress,
+                  abi: TNTAbi,
+                  functionName: "getActiveTokens",
+                  args: [recipientAddress],
+                }) as Promise<[bigint[], `0x${string}`[]]>,
+              ]);
+
+              const [allTokenIds, allIssuers] = allTokensData;
+              const [activeTokenIds] = activeTokensData;
+
+              // Convert to numbers for easier comparison
+              const activeTokenNumbers = activeTokenIds.map((id) => Number(id));
+
+              return {
+                address: recipientAddress,
+                tokenIds: allTokenIds.map((id) => Number(id)),
+                issuers: allIssuers,
+                activeTokenIds: activeTokenNumbers,
+                hasActiveTokens: activeTokenIds.length > 0,
+              };
+            } catch (error) {
+              console.error(
+                `Error fetching tokens for ${recipientAddress}:`,
+                error
+              );
+              return {
+                address: recipientAddress,
+                tokenIds: [],
+                issuers: [],
+                activeTokenIds: [],
+                hasActiveTokens: false,
+              };
+            }
+          }
+        );
+
+        const recipientInfos = await Promise.all(recipientInfoPromises);
+
+        setRecipients(recipientInfos);
         setRecipientsPagination((prev) => ({
           ...prev,
           currentPage: page,
-          totalPages: 0,
-          totalCount: 0,
+          totalPages,
+          totalCount: count,
         }));
-        return;
+      } catch (error) {
+        console.error("Error fetching recipients:", error);
+        toast.error("Failed to fetch recipients");
+      } finally {
+        setIsLoadingRecipients(false);
       }
-
-      // Calculate start and end indices for pagination
-      const startIndex = (page - 1) * recipientsPagination.itemsPerPage;
-      const endIndex = Math.min(
-        startIndex + recipientsPagination.itemsPerPage,
-        count
-      );
-
-      // Get recipients for current page
-      const recipientAddresses = (await publicClient.readContract({
-        address: contractAddress,
-        abi: TNTAbi,
-        functionName: "getRecipients",
-        args: [BigInt(startIndex), BigInt(endIndex)],
-      })) as `0x${string}`[];
-
-      // Get token details for each recipient
-      const recipientInfoPromises = recipientAddresses.map(
-        async (recipientAddress) => {
-          try {
-            const [allTokensData, activeTokensData] = await Promise.all([
-              publicClient.readContract({
-                address: contractAddress,
-                abi: TNTAbi,
-                functionName: "getAllIssuedTokens",
-                args: [recipientAddress],
-              }) as Promise<[bigint[], `0x${string}`[]]>,
-              publicClient.readContract({
-                address: contractAddress,
-                abi: TNTAbi,
-                functionName: "getActiveTokens",
-                args: [recipientAddress],
-              }) as Promise<[bigint[], `0x${string}`[]]>,
-            ]);
-
-            const [allTokenIds, allIssuers] = allTokensData;
-            const [activeTokenIds] = activeTokensData;
-
-            // Convert to numbers for easier comparison
-            const activeTokenNumbers = activeTokenIds.map((id) => Number(id));
-
-            return {
-              address: recipientAddress,
-              tokenIds: allTokenIds.map((id) => Number(id)),
-              issuers: allIssuers,
-              activeTokenIds: activeTokenNumbers,
-              hasActiveTokens: activeTokenIds.length > 0,
-            };
-          } catch (error) {
-            console.error(
-              `Error fetching tokens for ${recipientAddress}:`,
-              error
-            );
-            return {
-              address: recipientAddress,
-              tokenIds: [],
-              issuers: [],
-              activeTokenIds: [],
-              hasActiveTokens: false,
-            };
-          }
-        }
-      );
-
-      const recipientInfos = await Promise.all(recipientInfoPromises);
-
-      setRecipients(recipientInfos);
-      setRecipientsPagination((prev) => ({
-        ...prev,
-        currentPage: page,
-        totalPages,
-        totalCount: count,
-      }));
-    } catch (error) {
-      console.error("Error fetching recipients:", error);
-      toast.error("Failed to fetch recipients");
-    } finally {
-      setIsLoadingRecipients(false);
-    }
-  }, [contractAddress, chainId, recipientsPagination.itemsPerPage]);
+    },
+    [contractAddress, chainId, recipientsPagination.itemsPerPage]
+  );
 
   const handleRecipientsPageChange = (page: number) => {
     if (page >= 1 && page <= recipientsPagination.totalPages) {
