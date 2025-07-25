@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/hooks/ThemeProvider";
 import { WalletProvider } from "@/hooks/WalletProvider";
 import { Toaster } from "react-hot-toast";
+import ProtectedRouteProvider from "@/components/ProtectedRouteProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,7 +29,9 @@ export default function RootLayout({
           enableSystem={false}
           forcedTheme="dark"
         >
-          <WalletProvider>{children}</WalletProvider>
+          <WalletProvider>
+            <ProtectedRouteProvider>{children}</ProtectedRouteProvider>
+          </WalletProvider>
           <Toaster position="top-center" />
         </ThemeProvider>
       </body>
