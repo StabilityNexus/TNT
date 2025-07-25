@@ -11,14 +11,7 @@ import { TNTFactoryAbi } from "@/utils/contractsABI/TNTFactory";
 import { TNTAbi } from "@/utils/contractsABI/TNT";
 import WalletLockScreen from "@/components/WalletLockScreen";
 import { TNTCacheManager } from "@/utils/indexedDB";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface TNTDetails {
@@ -95,34 +88,39 @@ export default function MyTNTsPage() {
   }, [address]);
 
   const fetchPaginatedTNTs = useCallback(
-    async (page: number) => {
+    async (page: number, forceRefresh: boolean = false) => {
       try {
         setIsLoading(true);
         setError(null);
 
         if (!address) return;
 
-        // Try to get cached data first
-        const cachedResult = await cacheManager.getCachedTNTsPaginated(
-          address,
-          "owned",
-          page,
-          pagination.itemsPerPage
-        );
+        // Try to get cached data first (unless force refresh)
+        if (!forceRefresh) {
+          const cachedResult = await cacheManager.getCachedTNTsPaginated(
+            address,
+            "owned",
+            page,
+            pagination.itemsPerPage
+          );
 
-        if (cachedResult) {
-          setOwnedTNTs(cachedResult.data);
-          setPagination((prev) => ({
-            ...prev,
-            currentPage: cachedResult.currentPage,
-            totalPages: cachedResult.totalPages,
-            totalCount: cachedResult.totalCount,
-          }));
-          setIsLoading(false);
-          return;
+          if (cachedResult) {
+            setOwnedTNTs(cachedResult.data);
+            setPagination((prev) => ({
+              ...prev,
+              currentPage: cachedResult.currentPage,
+              totalPages: cachedResult.totalPages,
+              totalCount: cachedResult.totalCount,
+            }));
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          // Force refresh - invalidate cache first
+          await cacheManager.invalidateCache(address, "owned");
         }
 
-        // If no cache, fetch from blockchain
+        // If no cache or force refresh, fetch from blockchain
         const totalCount = await fetchTotalCount();
         const totalPages = Math.ceil(totalCount / pagination.itemsPerPage);
 
@@ -189,7 +187,15 @@ export default function MyTNTsPage() {
 
         // Cache all TNTs
         if (allTNTs.length > 0) {
-          await cacheManager.cacheTNTs(allTNTs, address, "owned");
+          try {
+            await cacheManager.cacheTNTs(allTNTs, address, "owned");
+          } catch (cacheError) {
+            console.warn(
+              "Failed to cache TNTs, but continuing with display:",
+              cacheError
+            );
+            // Continue even if caching fails
+          }
         }
 
         // Apply pagination to display
@@ -352,26 +358,53 @@ export default function MyTNTsPage() {
               of {pagination.totalCount} TNTs
             </p>
 
-            <Link
-              href="/create"
-              className="text-sm text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4"
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => fetchPaginatedTNTs(pagination.currentPage, true)}
+                className="text-sm text-slate-400 hover:text-amber-300 transition-colors flex items-center gap-1"
+                title="Refresh to check for new TNTs"
               >
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              Create New TNT
-            </Link>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4"
+                >
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                  <path d="M3 21v-5h5" />
+                </svg>
+                Refresh
+              </button>
+
+              <Link
+                href="/create"
+                className="text-sm text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Create New TNT
+              </Link>
+            </div>
           </div>
         )}
 
@@ -408,7 +441,9 @@ export default function MyTNTsPage() {
                 </div>
                 <p className="text-red-400 mb-4">{error}</p>
                 <Button
-                  onClick={() => fetchPaginatedTNTs(pagination.currentPage)}
+                  onClick={() =>
+                    fetchPaginatedTNTs(pagination.currentPage, true)
+                  }
                   className="bg-gradient-to-r from-purple-600 to-red-500 hover:from-purple-700 hover:to-red-600 text-white border-none"
                 >
                   Retry

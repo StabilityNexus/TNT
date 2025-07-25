@@ -7,20 +7,11 @@ import { useAccount } from "wagmi";
 import { TNTVaultFactories } from "@/utils/address";
 import { config } from "@/utils/config";
 import { getPublicClient } from "@wagmi/core";
-import detectEthereumProvider from "@metamask/detect-provider";
-import Web3 from "web3";
 import { TNTFactoryAbi } from "@/utils/contractsABI/TNTFactory";
 import { TNTAbi } from "@/utils/contractsABI/TNT";
 import WalletLockScreen from "@/components/WalletLockScreen";
 import { TNTCacheManager } from "@/utils/indexedDB";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface TNTDetails {
@@ -97,31 +88,36 @@ export default function ProfilePage() {
   }, [address]);
 
   const fetchPaginatedTNTs = useCallback(
-    async (page: number) => {
+    async (page: number, forceRefresh: boolean = false) => {
       try {
         setIsLoading(true);
         setError(null);
 
         if (!address) return;
 
-        // Try to get cached data first
-        const cachedResult = await cacheManager.getCachedTNTsPaginated(
-          address,
-          "received",
-          page,
-          pagination.itemsPerPage
-        );
+        // Try to get cached data first (unless force refresh)
+        if (!forceRefresh) {
+          const cachedResult = await cacheManager.getCachedTNTsPaginated(
+            address,
+            "received",
+            page,
+            pagination.itemsPerPage
+          );
 
-        if (cachedResult) {
-          setOwnedTNTs(cachedResult.data);
-          setPagination((prev) => ({
-            ...prev,
-            currentPage: cachedResult.currentPage,
-            totalPages: cachedResult.totalPages,
-            totalCount: cachedResult.totalCount,
-          }));
-          setIsLoading(false);
-          return;
+          if (cachedResult) {
+            setOwnedTNTs(cachedResult.data);
+            setPagination((prev) => ({
+              ...prev,
+              currentPage: cachedResult.currentPage,
+              totalPages: cachedResult.totalPages,
+              totalCount: cachedResult.totalCount,
+            }));
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          // Force refresh - invalidate cache first
+          await cacheManager.invalidateCache(address, "received");
         }
 
         // If no cache, fetch from blockchain
@@ -191,7 +187,15 @@ export default function ProfilePage() {
 
         // Cache all TNTs
         if (allTNTs.length > 0) {
-          await cacheManager.cacheTNTs(allTNTs, address, "received");
+          try {
+            await cacheManager.cacheTNTs(allTNTs, address, "received");
+          } catch (cacheError) {
+            console.warn(
+              "Failed to cache TNTs, but continuing with display:",
+              cacheError
+            );
+            // Continue even if caching fails
+          }
         }
 
         // Apply pagination to display
@@ -351,6 +355,31 @@ export default function ProfilePage() {
               )}{" "}
               of {pagination.totalCount} TNTs
             </p>
+
+            <button
+              onClick={() => fetchPaginatedTNTs(pagination.currentPage, true)}
+              className="text-sm text-slate-400 hover:text-amber-300 transition-colors flex items-center gap-1"
+              title="Refresh to check for new TNTs"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
+              >
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M3 21v-5h5" />
+              </svg>
+              Refresh
+            </button>
           </div>
         )}
 
@@ -387,7 +416,9 @@ export default function ProfilePage() {
                 </div>
                 <p className="text-red-400 mb-4">{error}</p>
                 <Button
-                  onClick={() => fetchPaginatedTNTs(pagination.currentPage)}
+                  onClick={() =>
+                    fetchPaginatedTNTs(pagination.currentPage, true)
+                  }
                   className="bg-gradient-to-r from-purple-600 to-red-500 hover:from-purple-700 hover:to-red-600 text-white border-none"
                 >
                   Retry

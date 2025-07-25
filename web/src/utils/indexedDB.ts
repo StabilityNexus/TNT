@@ -110,7 +110,7 @@ class TNTIndexedDB {
     const timestamp = Date.now();
     for (const tnt of tnts) {
       const cachedData: CachedTNTData = {
-        id: `${tnt.chainId}-${tnt.address}`,
+        id: `${userAddress}-${type}-${tnt.chainId}-${tnt.address}`,
         chainId: tnt.chainId,
         address: tnt.address,
         tokenName: tnt.tokenName,
@@ -122,9 +122,9 @@ class TNTIndexedDB {
       };
 
       await new Promise<void>((resolve, reject) => {
-        const addRequest = tntStore.add(cachedData);
-        addRequest.onsuccess = () => resolve();
-        addRequest.onerror = () => reject(addRequest.error);
+        const putRequest = tntStore.put(cachedData);
+        putRequest.onsuccess = () => resolve();
+        putRequest.onerror = () => reject(putRequest.error);
       });
     }
 
@@ -249,6 +249,41 @@ class TNTIndexedDB {
       });
     }
   }
+
+  async invalidateSpecificCache(
+    userAddress: string,
+    type: "owned" | "received"
+  ): Promise<void> {
+    if (!this.db) await this.init();
+
+    const transaction = this.db!.transaction(["tnts", "metadata"], "readwrite");
+    const tntStore = transaction.objectStore("tnts");
+    const metadataStore = transaction.objectStore("metadata");
+
+    // Clear specific type cache
+    const index = tntStore.index("userAddress");
+    const userData = await new Promise<CachedTNTData[]>((resolve, reject) => {
+      const request = index.getAll(userAddress);
+      request.onsuccess = () =>
+        resolve(request.result.filter((item) => item.type === type));
+      request.onerror = () => reject(request.error);
+    });
+
+    for (const item of userData) {
+      await new Promise<void>((resolve, reject) => {
+        const deleteRequest = tntStore.delete(item.id);
+        deleteRequest.onsuccess = () => resolve();
+        deleteRequest.onerror = () => reject(deleteRequest.error);
+      });
+    }
+
+    // Clear metadata for this type
+    await new Promise<void>((resolve, reject) => {
+      const deleteRequest = metadataStore.delete([userAddress, type]);
+      deleteRequest.onsuccess = () => resolve();
+      deleteRequest.onerror = () => reject(deleteRequest.error);
+    });
+  }
 }
 
 export class TNTCacheManager {
@@ -272,12 +307,29 @@ export class TNTCacheManager {
     userAddress: string,
     type: "owned" | "received",
     page: number,
-    itemsPerPage: number
+    itemsPerPage: number,
+    forceRefresh: boolean = false
   ): Promise<PaginatedResult | null> {
+    if (forceRefresh) {
+      // Clear cache for this user and type to force fresh data
+      await this.invalidateCache(userAddress, type);
+      return null;
+    }
     return this.db.getCachedTNTs(userAddress, type, page, itemsPerPage);
   }
 
   async clearCache(userAddress?: string): Promise<void> {
     return this.db.clearCache(userAddress);
+  }
+
+  async invalidateCache(
+    userAddress: string,
+    type?: "owned" | "received"
+  ): Promise<void> {
+    if (type) {
+      return this.db.invalidateSpecificCache(userAddress, type);
+    } else {
+      return this.db.clearCache(userAddress);
+    }
   }
 }
