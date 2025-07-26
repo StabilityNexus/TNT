@@ -66,7 +66,7 @@ export function HeroSection() {
                   size="lg"
                   className="w-full bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white shadow-lg shadow-purple-700/20"
                 >
-                  Get Started
+                  Create TNT
                 </Button>
               </Link>
               <Button
