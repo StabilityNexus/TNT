@@ -37,6 +37,7 @@ contract TNT is ERC721, AccessControl {
 
     event TokenIssued(address indexed issuer, address indexed user, uint256 indexed tokenId);
     event TokenRevoked(address indexed revoker, uint256 indexed tokenId);
+    event TokenBurned(address indexed burner, uint256 indexed tokenId);
 
     constructor(
         address admin,
@@ -93,6 +94,7 @@ contract TNT is ERC721, AccessControl {
         if (ownerOf(tokenId) != msg.sender) revert NotOwner();
         _removeFromActive(msg.sender, tokenId);
         _burn(tokenId);
+        emit TokenBurned(msg.sender, tokenId);
         if (_tokensByUser[msg.sender].length == 0) {
             IFactory(factoryContract).unregisterToken(msg.sender, address(this));
         }
