@@ -17,6 +17,8 @@ contract TNT is ERC721, AccessControl {
     error InvalidIndex();
     error NonTransferable();
     error MaxSupplyReached();
+    error MaxSupplyTooLow(uint256 requested, uint256 alreadyMinted);
+    event MaxSupplyUpdated(uint256 previous, uint256 next);
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant REVOKER_ROLE = keccak256("REVOKER_ROLE");
@@ -57,6 +59,10 @@ contract TNT is ERC721, AccessControl {
     }
 
     function setMaxSupply(uint256 _maxSupply) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_maxSupply != 0 && _maxSupply < _nextTokenId) {
+            revert MaxSupplyTooLow(_maxSupply, _nextTokenId);
+        }
+        emit MaxSupplyUpdated(maxSupply, _maxSupply);
         maxSupply = _maxSupply;
     }
 
