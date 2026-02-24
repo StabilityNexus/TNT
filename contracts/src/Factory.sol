@@ -22,6 +22,7 @@ contract Factory {
     }
 
     function createTNT(string memory name, string memory symbol, bool revokable, string memory imageURL) public returns (address) {
+        require(bytes(name).length > 0 && bytes(symbol).length > 0, "Invalid metadata");
         TNT newTNT = new TNT(msg.sender, name, symbol, revokable, address(this), imageURL);
         address tntAddr = address(newTNT);
         deployedTNTs[msg.sender].push(tntAddr);
