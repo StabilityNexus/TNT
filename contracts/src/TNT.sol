@@ -16,6 +16,7 @@ contract TNT is ERC721, AccessControl {
     error NotOwner();
     error InvalidIndex();
     error NonTransferable();
+    error MaxSupplyReached();
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant REVOKER_ROLE = keccak256("REVOKER_ROLE");
@@ -28,6 +29,7 @@ contract TNT is ERC721, AccessControl {
     bool public immutable revokable;
     address public factoryContract;
     string public imageURL;
+    uint256 public maxSupply;
 
     struct TokenMetadata {
         uint256 issuedAt;
@@ -54,8 +56,14 @@ contract TNT is ERC721, AccessControl {
         imageURL = _imageURL;
     }
 
+    function setMaxSupply(uint256 _maxSupply) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        maxSupply = _maxSupply;
+    }
+
     function issueToken(address user) public onlyRole(MINTER_ROLE) {
         if (user == address(0)) revert InvalidUser();
+
+        if (maxSupply > 0 && _nextTokenId >= maxSupply) revert MaxSupplyReached();
         
         uint256 tokenId = _nextTokenId++;
         _safeMint(user, tokenId);
