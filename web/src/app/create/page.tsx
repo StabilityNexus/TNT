@@ -23,6 +23,9 @@ interface DeployContractProps {
   imageURL: string;
 }
 
+const TNTCREATED_EVENT_NOT_FOUND =
+  "TNTCreated event not found in transaction logs";
+
 const fields = [
   {
     id: "tokenName",
@@ -184,7 +187,7 @@ export default function CreateTNT() {
           }
 
           if (!newTNTAddress) {
-            throw new Error("TNTCreated event not found in transaction logs");
+            throw new Error(TNTCREATED_EVENT_NOT_FOUND);
           }
 
           const txDetails = {
@@ -211,10 +214,15 @@ export default function CreateTNT() {
           throw new Error("Transaction failed");
         }
       } catch (waitError) {
+        const isDecodingFailure =
+          waitError instanceof Error &&
+          waitError.message === TNTCREATED_EVENT_NOT_FOUND;
+        if (isDecodingFailure) throw waitError;
+
         console.error("Error waiting for transaction:", waitError);
         toast.error("Transaction confirmation failed. Please check manually.");
 
-        // Still save the transaction attempt
+        // Still save the transaction attempt (no contractAddress)
         const txDetails = {
           tokenName: tokenName.trim(),
           tokenSymbol: tokenSymbol.trim(),
@@ -253,6 +261,10 @@ export default function CreateTNT() {
       } else if (error?.message?.includes("network")) {
         toast.error(
           "Network error. Please check your connection and try again."
+        );
+      } else if (error?.message === TNTCREATED_EVENT_NOT_FOUND) {
+        toast.error(
+          "Transaction succeeded but the TNT address could not be read from the receipt. Check the block explorer for the contract address."
         );
       } else {
         toast.error(
