@@ -14,6 +14,7 @@ import { TNTFactoryAbi } from "@/utils/contractsABI/TNTFactory";
 import { Info } from "lucide-react";
 import { useTheme } from "next-themes";
 import { getPublicClient } from "@wagmi/core";
+import { decodeEventLog } from "viem";
 
 interface DeployContractProps {
   tokenName: string;
@@ -157,38 +158,33 @@ export default function CreateTNT() {
         console.log("Transaction confirmed! Receipt:", receipt);
 
         if (receipt.status === "success") {
-          // Extract the new TNT contract address from logs
-          let newTNTAddress = null;
+          // Extract the new TNT contract address from TNTCreated event
+          let newTNTAddress: `0x${string}` | null = null;
 
-          // Look for TNTCreated event in logs
-          try {
-            const publicClient = getPublicClient(config as any, { chainId });
-            if (publicClient) {
-              // Decode logs to find the TNTCreated event
-              for (const log of receipt.logs) {
-                if (
-                  log.address.toLowerCase() === factoryAddress.toLowerCase()
-                ) {
-                  // This is likely our TNTCreated event
-                  // The first topic after the event signature should be the owner
-                  // The data should contain the TNT address
-                  if (log.topics.length > 1 && log.data) {
-                    // Try to decode the TNT address from the log data
-                    // For now, we'll use a placeholder - in a real implementation,
-                    // you'd properly decode the event logs
-                    console.log("TNT created successfully, log:", log);
-                    newTNTAddress = log.data; // This is a simplified approach
-                  }
-                }
+          for (const log of receipt.logs) {
+            if (log.address.toLowerCase() !== factoryAddress.toLowerCase())
+              continue;
+            try {
+              const decoded = decodeEventLog({
+                abi: TNTFactoryAbi,
+                data: log.data,
+                topics: log.topics,
+              });
+              if (
+                decoded.eventName === "TNTCreated" &&
+                decoded.args &&
+                "tntAddress" in decoded.args
+              ) {
+                newTNTAddress = decoded.args.tntAddress as `0x${string}`;
+                break;
               }
+            } catch {
+              continue;
             }
-          } catch (logError) {
-            console.warn("Could not decode TNT address from logs:", logError);
           }
 
-          // If we couldn't get the address from logs, create a placeholder
           if (!newTNTAddress) {
-            newTNTAddress = `0x${txHash.slice(2, 42)}`; // Use part of tx hash as placeholder
+            throw new Error("TNTCreated event not found in transaction logs");
           }
 
           const txDetails = {
