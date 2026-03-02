@@ -82,9 +82,21 @@ export default function CreateTNT() {
   };
 
   const saveTransaction = (txDetails: object) => {
-    const history = getTransactionHistory();
-    history.push(txDetails);
-    localStorage.setItem("transactionHistory", JSON.stringify(history));
+      try {
+        const history = getTransactionHistory();
+        history.push(txDetails);
+        localStorage.setItem("transactionHistory", JSON.stringify(history));
+      } catch (error) {
+        // Handle QuotaExceededError or security exceptions (e.g., storage disabled)
+        console.error("Failed to save transaction to localStorage:", error);
+        
+        if (error instanceof DOMException && 
+          (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+          toast.error("Local storage is full. Transaction history might not be saved.");
+        } else {
+          toast.error("An error occurred while saving transaction data.");
+        }
+      }
   };
 
   const deployContract = async () => {
