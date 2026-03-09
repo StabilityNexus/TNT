@@ -71,6 +71,16 @@ describe("TNT and Factory Contracts", function () {
             .to.emit(tnt, "Transfer")
             .withArgs(addr2.address, ethers.ZeroAddress, tokenId);
     });
+
+    it("should emit TokenBurned when owner burns their token", async function () {
+        await tnt.grantMinterRole(addr1.address);
+        await tnt.connect(addr1).issueToken(addr2.address);
+
+        const tokenId = 0;
+        await expect(tnt.connect(addr2).burnToken(tokenId))
+            .to.emit(tnt, "TokenBurned")
+            .withArgs(addr1.address, addr2.address, tokenId);
+    });
     
     it("should prevent revocation if not revokable", async function () {
         const tokenId = 0;
