@@ -35,8 +35,8 @@ contract TNT is ERC721, AccessControl {
 
     mapping(uint256 => TokenMetadata) public metadata;
 
-    event TokenIssued(address indexed issuer, address indexed user, uint256 tokenId);
-    event TokenRevoked(address indexed revoker, uint256 tokenId);
+    event TokenIssued(address indexed issuer, address indexed user, uint256 indexed tokenId);
+    event TokenRevoked(address indexed revoker, uint256 indexed tokenId);
 
     constructor(
         address admin,

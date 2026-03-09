@@ -19,7 +19,7 @@ describe("TNT and Factory Contracts", function () {
         TNT = TNTContract;
 
         // Deploy revokable TNT
-        let tx = await factory.createTNT("TestToken", "TTK", true);
+        let tx = await factory.createTNT("TestToken", "TTK", true, "");
         let receipt = await tx.wait();
         let event = receipt.logs.find(
             (log) => 'fragment' in log && log.fragment.name === 'TNTCreated'
@@ -28,7 +28,7 @@ describe("TNT and Factory Contracts", function () {
         tnt = await ethers.getContractAt("TNT", tntAddress);
 
         // Deploy non-revokable TNT
-        tx = await factory.createTNT("NonRevokableToken", "NRT", false);
+        tx = await factory.createTNT("NonRevokableToken", "NRT", false, "");
         receipt = await tx.wait();
         event = receipt.logs.find(
             (log) => 'fragment' in log && log.fragment.name === 'TNTCreated'

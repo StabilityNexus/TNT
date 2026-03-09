@@ -12,7 +12,7 @@ contract Factory {
     mapping(address => bool) public isDeployedTNT;
     mapping(address => mapping(address => bool)) private userHasTNT;
 
-    event TNTCreated(address indexed owner, address tntAddress);
+    event TNTCreated(address indexed owner, address indexed tntAddress);
     event TokenRegistered(address indexed user, address indexed tntAddress);
     event TokenUnregistered(address indexed user, address indexed tntAddress);
 
