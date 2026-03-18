@@ -78,7 +78,6 @@ contract TNT is ERC721, AccessControl {
     
     function revokeToken(uint256 tokenId) public onlyRole(REVOKER_ROLE) {
         if (!revokable) revert NotRevokable();
-        if (tokenIssuers[tokenId] != msg.sender) revert NotIssuer();
         
         address tokenOwner = ownerOf(tokenId);
         _removeFromActive(tokenOwner, tokenId);
