@@ -49,6 +49,10 @@ export default function TokenActionsPage() {
   });
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
 
+  // mint cap state
+  const [mintCap, setMintCap] = useState<bigint>(0n);
+  const [totalMinted, setTotalMinted] = useState<bigint>(0n);
+
   // Form states for each action
   const [issueRecipient, setIssueRecipient] = useState("");
   const [revokeTokenId, setRevokeTokenId] = useState("");
@@ -112,6 +116,25 @@ export default function TokenActionsPage() {
         setPermissions(perms);
         setUserRoles(roles);
         setIsTokenRevokable(tokenInfo.revokable);
+
+        // read mint cap and total minted from contract
+        const publicClient = getPublicClient(config as any, { chainId });
+        if (publicClient) {
+          const [cap, minted] = await Promise.all([
+            publicClient.readContract({
+              address: contractAddress,
+              abi: TNTAbi,
+              functionName: "maxMintCap",
+            }) as Promise<bigint>,
+            publicClient.readContract({
+              address: contractAddress,
+              abi: TNTAbi,
+              functionName: "getAllParticipantsCount",
+            }) as Promise<bigint>,
+          ]);
+          setMintCap(cap);
+          setTotalMinted(minted);
+        }
       } catch (error) {
         console.error("Error loading permissions:", error);
       } finally {
@@ -257,6 +280,10 @@ export default function TokenActionsPage() {
       toast.error("You don't have permission to issue tokens");
       return;
     }
+    if (mintCap > 0n && totalMinted >= mintCap) {
+      toast.error("Mint cap has been reached. No more tokens can be issued.");
+      return;
+    }
     try {
       setIsIssuing(true);
       const tx = await writeContract(config as any, {
@@ -269,6 +296,7 @@ export default function TokenActionsPage() {
       toast.success("Token issued successfully!");
       console.log("Issue token tx:", tx);
       setIssueRecipient("");
+      setTotalMinted((prev) => prev + 1n);
     } catch (error) {
       console.error("Error issuing token:", error);
       toast.error("Failed to issue token");
@@ -568,6 +596,15 @@ export default function TokenActionsPage() {
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">
                   Recipient Address
                 </label>
+                {/* mint cap progress */}
+                {mintCap > 0n && (
+                  <div className="text-xs text-slate-400 mb-2">
+                    Minted: {totalMinted.toString()} / {mintCap.toString()}
+                    {mintCap > 0n && totalMinted >= mintCap && (
+                      <span className="ml-2 text-red-400 font-semibold">Cap Reached!</span>
+                    )}
+                  </div>
+                )}
                 <input
                   type="text"
                   value={issueRecipient}
@@ -575,16 +612,18 @@ export default function TokenActionsPage() {
                   placeholder="Enter recipient address"
                   className="w-full bg-slate-800/80 border-0 text-white placeholder:text-slate-500 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-emerald-500/30 transition-all duration-200"
                   required
-                  disabled={!permissions.canIssue}
+                  disabled={!permissions.canIssue || (mintCap > 0n && totalMinted >= mintCap)}
                 />
               </div>
               <button
                 type="submit"
-                disabled={isIssuing || !permissions.canIssue}
+                disabled={isIssuing || !permissions.canIssue || (mintCap > 0n && totalMinted >= mintCap)}
                 className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 rounded-xl text-white font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isIssuing
                   ? "Issuing..."
+                  : mintCap > 0n && totalMinted >= mintCap
+                  ? "Mint Cap Reached"
                   : !permissions.canIssue
                   ? "No Permission"
                   : "Issue Token"}

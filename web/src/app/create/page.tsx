@@ -21,6 +21,7 @@ interface DeployContractProps {
   tokenSymbol: string;
   revokable: boolean;
   imageURL: string;
+  maxMintCap: string;
 }
 
 const TNTCREATED_EVENT_NOT_FOUND =
@@ -48,6 +49,13 @@ const fields = [
     placeholder: "https://example.com/image.png",
     description: "Image to associate with this TNT",
   },
+  {
+    id: "maxMintCap",
+    label: "Max Mint Cap",
+    type: "number",
+    placeholder: "e.g. 1000",
+    description: "Maximum number of tokens that can ever be minted",
+  },
 ];
 
 export default function CreateTNT() {
@@ -56,6 +64,7 @@ export default function CreateTNT() {
     tokenSymbol: "",
     revokable: false,
     imageURL: "",
+    maxMintCap: "",
   });
   const [isDeploying, setIsDeploying] = useState(false);
 
@@ -121,7 +130,7 @@ export default function CreateTNT() {
         return;
       }
 
-      const { tokenName, tokenSymbol, revokable, imageURL } = formData;
+      const { tokenName, tokenSymbol, revokable, imageURL, maxMintCap } = formData;
 
       // Validate inputs
       if (!tokenName.trim()) {
@@ -134,6 +143,12 @@ export default function CreateTNT() {
         return;
       }
 
+      const capValue = Number(maxMintCap);
+      if (!maxMintCap || !Number.isInteger(capValue) || capValue <= 0) {
+        toast.error("Max Mint Cap must be a positive integer");
+        return;
+      }
+
       const factoryAddress = TNTVaultFactories[chainId];
       const cleanImageURL = imageURL.trim() || "";
 
@@ -143,6 +158,7 @@ export default function CreateTNT() {
         symbol: tokenSymbol.trim(),
         revokable,
         imageURL: cleanImageURL,
+        maxMintCap,
         chainId,
         userAddress: address,
       });
@@ -153,7 +169,7 @@ export default function CreateTNT() {
         address: factoryAddress,
         abi: TNTFactoryAbi,
         functionName: "createTNT",
-        args: [tokenName.trim(), tokenSymbol.trim(), revokable, cleanImageURL],
+        args: [tokenName.trim(), tokenSymbol.trim(), revokable, cleanImageURL, BigInt(maxMintCap)],
         chainId: chainId,
       });
 
@@ -207,6 +223,7 @@ export default function CreateTNT() {
             tokenSymbol: tokenSymbol.trim(),
             revokable,
             imageURL: cleanImageURL,
+            maxMintCap,
             transactionHash: txHash,
             contractAddress: newTNTAddress,
             chainId,
@@ -240,6 +257,7 @@ export default function CreateTNT() {
           tokenSymbol: tokenSymbol.trim(),
           revokable,
           imageURL: cleanImageURL,
+          maxMintCap,
           transactionHash: txHash,
           chainId,
           factoryAddress,
