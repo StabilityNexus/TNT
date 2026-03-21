@@ -143,8 +143,9 @@ export default function CreateTNT() {
         return;
       }
 
-      if (!maxMintCap || Number(maxMintCap) <= 0) {
-        toast.error("Max Mint Cap must be a positive number");
+      const capValue = Number(maxMintCap);
+      if (!maxMintCap || !Number.isInteger(capValue) || capValue <= 0) {
+        toast.error("Max Mint Cap must be a positive integer");
         return;
       }
 
