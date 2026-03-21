@@ -23,6 +23,11 @@ const TNTFactory = {
                     "name": "imageURL",
                     "type": "string",
                     "internalType": "string"
+                },
+                {
+                    "name": "maxMintCap",
+                    "type": "uint256",
+                    "internalType": "uint256"
                 }
             ],
             "outputs": [

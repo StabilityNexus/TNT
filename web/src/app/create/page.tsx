@@ -14,13 +14,18 @@ import { TNTFactoryAbi } from "@/utils/contractsABI/TNTFactory";
 import { Info } from "lucide-react";
 import { useTheme } from "next-themes";
 import { getPublicClient } from "@wagmi/core";
+import { decodeEventLog } from "viem";
 
 interface DeployContractProps {
   tokenName: string;
   tokenSymbol: string;
   revokable: boolean;
   imageURL: string;
+  maxMintCap: string;
 }
+
+const TNTCREATED_EVENT_NOT_FOUND =
+  "TNTCreated event not found in transaction logs";
 
 const fields = [
   {
@@ -44,6 +49,13 @@ const fields = [
     placeholder: "https://example.com/image.png",
     description: "Image to associate with this TNT",
   },
+  {
+    id: "maxMintCap",
+    label: "Max Mint Cap",
+    type: "number",
+    placeholder: "e.g. 1000",
+    description: "Maximum number of tokens that can ever be minted",
+  },
 ];
 
 export default function CreateTNT() {
@@ -52,6 +64,7 @@ export default function CreateTNT() {
     tokenSymbol: "",
     revokable: false,
     imageURL: "",
+    maxMintCap: "",
   });
   const [isDeploying, setIsDeploying] = useState(false);
 
@@ -78,9 +91,21 @@ export default function CreateTNT() {
   };
 
   const saveTransaction = (txDetails: object) => {
-    const history = getTransactionHistory();
-    history.push(txDetails);
-    localStorage.setItem("transactionHistory", JSON.stringify(history));
+      try {
+        const history = getTransactionHistory();
+        history.push(txDetails);
+        localStorage.setItem("transactionHistory", JSON.stringify(history));
+      } catch (error) {
+        // Handle QuotaExceededError or security exceptions (e.g., storage disabled)
+        console.error("Failed to save transaction to localStorage:", error);
+        
+        if (error instanceof DOMException && 
+          (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+          toast.error("Local storage is full. Transaction history might not be saved.");
+        } else {
+          toast.error("An error occurred while saving transaction data.");
+        }
+      }
   };
 
   const deployContract = async () => {
@@ -105,7 +130,7 @@ export default function CreateTNT() {
         return;
       }
 
-      const { tokenName, tokenSymbol, revokable, imageURL } = formData;
+      const { tokenName, tokenSymbol, revokable, imageURL, maxMintCap } = formData;
 
       // Validate inputs
       if (!tokenName.trim()) {
@@ -118,6 +143,11 @@ export default function CreateTNT() {
         return;
       }
 
+      if (!maxMintCap || Number(maxMintCap) <= 0) {
+        toast.error("Max Mint Cap must be a positive number");
+        return;
+      }
+
       const factoryAddress = TNTVaultFactories[chainId];
       const cleanImageURL = imageURL.trim() || "";
 
@@ -127,6 +157,7 @@ export default function CreateTNT() {
         symbol: tokenSymbol.trim(),
         revokable,
         imageURL: cleanImageURL,
+        maxMintCap,
         chainId,
         userAddress: address,
       });
@@ -137,7 +168,7 @@ export default function CreateTNT() {
         address: factoryAddress,
         abi: TNTFactoryAbi,
         functionName: "createTNT",
-        args: [tokenName.trim(), tokenSymbol.trim(), revokable, cleanImageURL],
+        args: [tokenName.trim(), tokenSymbol.trim(), revokable, cleanImageURL, BigInt(maxMintCap)],
         chainId: chainId,
       });
 
@@ -157,38 +188,33 @@ export default function CreateTNT() {
         console.log("Transaction confirmed! Receipt:", receipt);
 
         if (receipt.status === "success") {
-          // Extract the new TNT contract address from logs
-          let newTNTAddress = null;
+          // Extract the new TNT contract address from TNTCreated event
+          let newTNTAddress: `0x${string}` | null = null;
 
-          // Look for TNTCreated event in logs
-          try {
-            const publicClient = getPublicClient(config as any, { chainId });
-            if (publicClient) {
-              // Decode logs to find the TNTCreated event
-              for (const log of receipt.logs) {
-                if (
-                  log.address.toLowerCase() === factoryAddress.toLowerCase()
-                ) {
-                  // This is likely our TNTCreated event
-                  // The first topic after the event signature should be the owner
-                  // The data should contain the TNT address
-                  if (log.topics.length > 1 && log.data) {
-                    // Try to decode the TNT address from the log data
-                    // For now, we'll use a placeholder - in a real implementation,
-                    // you'd properly decode the event logs
-                    console.log("TNT created successfully, log:", log);
-                    newTNTAddress = log.data; // This is a simplified approach
-                  }
-                }
+          for (const log of receipt.logs) {
+            if (log.address.toLowerCase() !== factoryAddress.toLowerCase())
+              continue;
+            try {
+              const decoded = decodeEventLog({
+                abi: TNTFactoryAbi,
+                data: log.data,
+                topics: log.topics,
+              });
+              if (
+                decoded.eventName === "TNTCreated" &&
+                decoded.args &&
+                "tntAddress" in decoded.args
+              ) {
+                newTNTAddress = decoded.args.tntAddress as `0x${string}`;
+                break;
               }
+            } catch {
+              continue;
             }
-          } catch (logError) {
-            console.warn("Could not decode TNT address from logs:", logError);
           }
 
-          // If we couldn't get the address from logs, create a placeholder
           if (!newTNTAddress) {
-            newTNTAddress = `0x${txHash.slice(2, 42)}`; // Use part of tx hash as placeholder
+            throw new Error(TNTCREATED_EVENT_NOT_FOUND);
           }
 
           const txDetails = {
@@ -196,6 +222,7 @@ export default function CreateTNT() {
             tokenSymbol: tokenSymbol.trim(),
             revokable,
             imageURL: cleanImageURL,
+            maxMintCap,
             transactionHash: txHash,
             contractAddress: newTNTAddress,
             chainId,
@@ -215,15 +242,21 @@ export default function CreateTNT() {
           throw new Error("Transaction failed");
         }
       } catch (waitError) {
+        const isDecodingFailure =
+          waitError instanceof Error &&
+          waitError.message === TNTCREATED_EVENT_NOT_FOUND;
+        if (isDecodingFailure) throw waitError;
+
         console.error("Error waiting for transaction:", waitError);
         toast.error("Transaction confirmation failed. Please check manually.");
 
-        // Still save the transaction attempt
+        // Still save the transaction attempt (no contractAddress)
         const txDetails = {
           tokenName: tokenName.trim(),
           tokenSymbol: tokenSymbol.trim(),
           revokable,
           imageURL: cleanImageURL,
+          maxMintCap,
           transactionHash: txHash,
           chainId,
           factoryAddress,
@@ -257,6 +290,10 @@ export default function CreateTNT() {
       } else if (error?.message?.includes("network")) {
         toast.error(
           "Network error. Please check your connection and try again."
+        );
+      } else if (error?.message === TNTCREATED_EVENT_NOT_FOUND) {
+        toast.error(
+          "Transaction succeeded but the TNT address could not be read from the receipt. Check the block explorer for the contract address."
         );
       } else {
         toast.error(

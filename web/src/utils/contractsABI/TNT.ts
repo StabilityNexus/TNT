@@ -32,6 +32,11 @@ const TNT = {
                     "name": "_imageURL",
                     "type": "string",
                     "internalType": "string"
+                },
+                {
+                    "name": "_maxMintCap",
+                    "type": "uint256",
+                    "internalType": "uint256"
                 }
             ],
             "stateMutability": "nonpayable"
@@ -416,6 +421,19 @@ const TNT = {
             ],
             "outputs": [],
             "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "maxMintCap",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
         },
         {
             "type": "function",
@@ -923,6 +941,11 @@ const TNT = {
         {
             "type": "error",
             "name": "InvalidRecipient",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "MintCapReached",
             "inputs": []
         },
         {

@@ -138,7 +138,7 @@ export class TNTRoleManager {
         throw new Error(`No public client available for chain ${this.chainId}`);
       }
 
-      const [name, symbol, revokable, imageURL] = await Promise.all([
+      const [name, symbol, revokable, imageURL, maxMintCap] = await Promise.all([
         publicClient.readContract({
           address: this.contractAddress,
           abi: TNTAbi,
@@ -159,9 +159,14 @@ export class TNTRoleManager {
           abi: TNTAbi,
           functionName: "imageURL",
         }).catch(() => "") as Promise<string>,
+        publicClient.readContract({
+          address: this.contractAddress,
+          abi: TNTAbi,
+          functionName: "maxMintCap",
+        }).catch(() => 0n) as Promise<bigint>,
       ]);
 
-      return { name, symbol, revokable, imageURL };
+      return { name, symbol, revokable, imageURL, maxMintCap };
     } catch (error) {
       console.error("Error fetching token info:", error);
       throw error;
@@ -193,4 +198,4 @@ export async function hasActiveTokens(
     console.error("Error checking active tokens:", error);
     return false;
   }
-} 
+}
