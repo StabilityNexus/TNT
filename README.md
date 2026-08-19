@@ -301,6 +301,14 @@ forge fmt
 ```
 
 
+You can use hardhat local nodes, it forkes current scroll sepolia state for local developement.
+```bash
+npx hardhat node
+```
+Run this command in `TNT/`, copy the private key and import the wallet on Metamask or any compatible wallet.
+Note- The chain is forked so it doesn't change the actual contract but works exactly the same and once the node is shut down everything is reset. 
+Local RPC endpoint 
+http://127.0.0.1:8545
 
 ---
 

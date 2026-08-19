@@ -1,10 +1,11 @@
-import { mainnet, polygon, scrollSepolia } from "wagmi/chains";
+import { mainnet, polygon, scrollSepolia, hardhat } from "wagmi/chains";
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { citreaTestnet } from "@/components/CitreaTestnet";
 import { ethereumClassic } from "@/components/EthereumClassic";
 
 const chains = [
   scrollSepolia,
+  hardhat,
   polygon,
   mainnet,
   citreaTestnet,
