@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAccount } from "wagmi";
-import { writeContract } from "@wagmi/core";
+import { waitForTransactionReceipt, writeContract } from "@wagmi/core";
 import { TNTAbi } from "@/utils/contractsABI/TNT";
 import toast from "react-hot-toast";
 import {
@@ -26,6 +26,33 @@ interface RecipientsPagination {
   totalPages: number;
   totalCount: number;
   itemsPerPage: number;
+}
+
+type SupportedChainId = (typeof config.chains)[number]["id"];
+
+function getTransactionErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null) {
+    const candidate = error as { shortMessage?: string; message?: string };
+    if (candidate.shortMessage) return candidate.shortMessage;
+    if (candidate.message) return candidate.message;
+  }
+  return fallback;
+}
+
+async function waitForSuccessfulTransaction(
+  hash: `0x${string}`,
+  chainId: number
+) {
+  const receipt = await waitForTransactionReceipt(config, {
+    hash,
+    chainId: chainId as SupportedChainId,
+  });
+
+  if (receipt.status !== "success") {
+    throw new Error(`Transaction ${hash} reverted`);
+  }
+
+  return receipt;
 }
 
 export default function TokenActionsPage() {
@@ -93,11 +120,13 @@ export default function TokenActionsPage() {
   }, []);
 
   // Load user permissions and token info when contract address and user address are available
-  useEffect(() => {
-    const loadPermissions = async () => {
+  const loadPermissions = useCallback(
+    async (showLoading = true) => {
       if (!contractAddress || !chainId || !address) return;
 
-      setIsLoadingPermissions(true);
+      if (showLoading) {
+        setIsLoadingPermissions(true);
+      }
       try {
         const roleManager = new TNTRoleManager(
           contractAddress,
@@ -115,12 +144,17 @@ export default function TokenActionsPage() {
       } catch (error) {
         console.error("Error loading permissions:", error);
       } finally {
-        setIsLoadingPermissions(false);
+        if (showLoading) {
+          setIsLoadingPermissions(false);
+        }
       }
-    };
+    },
+    [contractAddress, chainId, address]
+  );
 
+  useEffect(() => {
     loadPermissions();
-  }, [contractAddress, chainId, address]);
+  }, [loadPermissions]);
 
   const fetchRecipients = useCallback(
     async (page: number) => {
@@ -259,19 +293,24 @@ export default function TokenActionsPage() {
     }
     try {
       setIsIssuing(true);
-      const tx = await writeContract(config as any, {
+      const hash = await writeContract(config as any, {
         address: contractAddress,
         abi: TNTAbi,
         functionName: "issueToken",
         args: [issueRecipient],
         chainId: chainId,
       });
+      await waitForSuccessfulTransaction(hash, chainId);
       toast.success("Token issued successfully!");
-      console.log("Issue token tx:", tx);
+      console.log("Issue token tx:", hash);
       setIssueRecipient("");
+      await Promise.all([
+        loadPermissions(false),
+        fetchRecipients(recipientsPagination.currentPage),
+      ]);
     } catch (error) {
       console.error("Error issuing token:", error);
-      toast.error("Failed to issue token");
+      toast.error(getTransactionErrorMessage(error, "Failed to issue token"));
     } finally {
       setIsIssuing(false);
     }
@@ -292,19 +331,24 @@ export default function TokenActionsPage() {
     try {
       setIsRevoking(true);
       const tokenId = Number(revokeTokenId);
-      const tx = await writeContract(config as any, {
+      const hash = await writeContract(config as any, {
         address: contractAddress,
         abi: TNTAbi,
         functionName: "revokeToken",
         args: [tokenId],
         chainId: chainId,
       });
+      await waitForSuccessfulTransaction(hash, chainId);
       toast.success("Token revoked successfully!");
-      console.log("Revoke token tx:", tx);
+      console.log("Revoke token tx:", hash);
       setRevokeTokenId("");
+      await Promise.all([
+        loadPermissions(false),
+        fetchRecipients(recipientsPagination.currentPage),
+      ]);
     } catch (error) {
       console.error("Error revoking token:", error);
-      toast.error("Failed to revoke token");
+      toast.error(getTransactionErrorMessage(error, "Failed to revoke token"));
     } finally {
       setIsRevoking(false);
     }
@@ -323,19 +367,24 @@ export default function TokenActionsPage() {
     try {
       setIsBurning(true);
       const tokenId = Number(burnTokenId);
-      const tx = await writeContract(config as any, {
+      const hash = await writeContract(config as any, {
         address: contractAddress,
         abi: TNTAbi,
         functionName: "burnToken",
         args: [tokenId],
         chainId: chainId,
       });
+      await waitForSuccessfulTransaction(hash, chainId);
       toast.success("Token burned successfully!");
-      console.log("Burn token tx:", tx);
+      console.log("Burn token tx:", hash);
       setBurnTokenId("");
+      await Promise.all([
+        loadPermissions(false),
+        fetchRecipients(recipientsPagination.currentPage),
+      ]);
     } catch (error) {
       console.error("Error burning token:", error);
-      toast.error("Failed to burn token");
+      toast.error(getTransactionErrorMessage(error, "Failed to burn token"));
     } finally {
       setIsBurning(false);
     }
@@ -355,23 +404,28 @@ export default function TokenActionsPage() {
       setIsGrantingRole(true);
       const functionName =
         selectedRole === "minter" ? "grantMinterRole" : "grantRevokerRole";
-      const tx = await writeContract(config as any, {
+      const hash = await writeContract(config as any, {
         address: contractAddress,
         abi: TNTAbi,
         functionName: functionName,
         args: [grantRoleAddress],
         chainId: chainId,
       });
+      await waitForSuccessfulTransaction(hash, chainId);
       toast.success(
         `${
           selectedRole === "minter" ? "Minter" : "Revoker"
         } role granted successfully!`
       );
-      console.log("Grant role tx:", tx);
+      console.log("Grant role tx:", hash);
       setGrantRoleAddress("");
+      await Promise.all([
+        loadPermissions(false),
+        fetchRecipients(recipientsPagination.currentPage),
+      ]);
     } catch (error) {
       console.error("Error granting role:", error);
-      toast.error("Failed to grant role");
+      toast.error(getTransactionErrorMessage(error, "Failed to grant role"));
     } finally {
       setIsGrantingRole(false);
     }
