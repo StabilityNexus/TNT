@@ -23,6 +23,7 @@ contract TNT is ERC721, AccessControl {
     uint256 private _nextTokenId;
     mapping(uint256 => address) public tokenIssuers;
     mapping(address => uint256[]) public _tokensByUser;  
+    mapping(address => uint256[]) public _allTokensByUser;
     address[] public _allUsers;                                
     mapping(address => bool) public _isUser;                   
     bool public immutable revokable;
@@ -63,6 +64,7 @@ contract TNT is ERC721, AccessControl {
         tokenIssuers[tokenId] = msg.sender;
         metadata[tokenId] = TokenMetadata(block.timestamp);
         _tokensByUser[user].push(tokenId);
+        _allTokensByUser[user].push(tokenId);
         
         if (!_isUser[user]) {
             _allUsers.push(user);
@@ -124,6 +126,17 @@ contract TNT is ERC721, AccessControl {
         }
     }
 
+    function getAllIssuedTokens(address user) public view returns (uint256[] memory tokenIds, address[] memory issuers) {
+        uint256 len = _allTokensByUser[user].length;
+        tokenIds = new uint256[](len);
+        issuers = new address[](len);
+
+        for (uint256 i = 0; i < len; i++) {
+            tokenIds[i] = _allTokensByUser[user][i];
+            issuers[i] = tokenIssuers[tokenIds[i]];
+        }
+    }
+
     function hasActiveTokens(address user) public view returns (bool) { return _tokensByUser[user].length > 0; }
     function getActiveTokenCount(address user) public view returns (uint256) { return _tokensByUser[user].length; }
     function getAllParticipantsCount() public view returns (uint256) { return _allUsers.length; }
@@ -138,6 +151,10 @@ contract TNT is ERC721, AccessControl {
             result[i] = _allUsers[start + i];
         }
         return result;
+    }
+
+    function getRecipients(uint256 start, uint256 end) public view returns (address[] memory) {
+        return getUsers(start, end);
     }
 
     function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
