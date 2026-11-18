@@ -183,12 +183,99 @@ const TNT = {
         },
         {
             "type": "function",
+            "name": "getAllIssuedTokenCount",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getAllIssuedTokensPaginated",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "offset",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "limit",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "tokenIds",
+                    "type": "uint256[]",
+                    "internalType": "uint256[]"
+                },
+                {
+                    "name": "issuers",
+                    "type": "address[]",
+                    "internalType": "address[]"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
             "name": "getActiveTokens",
             "inputs": [
                 {
                     "name": "user",
                     "type": "address",
                     "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "tokenIds",
+                    "type": "uint256[]",
+                    "internalType": "uint256[]"
+                },
+                {
+                    "name": "issuers",
+                    "type": "address[]",
+                    "internalType": "address[]"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getActiveTokensPaginated",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "offset",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "limit",
+                    "type": "uint256",
+                    "internalType": "uint256"
                 }
             ],
             "outputs": [
