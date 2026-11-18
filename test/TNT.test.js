@@ -86,7 +86,7 @@ describe("TNT and Factory Contracts", function () {
         const tokenId = 0;
         await expect(
             nonRevokableTnt.connect(owner).revokeToken(tokenId)
-        ).to.be.revertedWith("Token is non-revokable");
+        ).to.be.revertedWithCustomError(nonRevokableTnt, "NotRevokable");
     });
     
     it("should restrict transfers of tokens", async function () {
@@ -96,7 +96,7 @@ describe("TNT and Factory Contracts", function () {
 
         await expect(
             tnt.connect(addr2).transferFrom(addr2.address, addr1.address, tokenId)
-        ).to.be.revertedWith("TNTs are non-transferable");
+        ).to.be.revertedWithCustomError(tnt, "NonTransferable");
     });
 
     it("should allow the admin to grant roles", async function () {
