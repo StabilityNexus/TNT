@@ -144,8 +144,12 @@ describe("TNT and Factory Contracts", function () {
     });
 
     it("should reject invalid recipient ranges", async function () {
-        await expect(tnt.getRecipients(1, 0)).to.be.revertedWithCustomError(tnt, "InvalidIndex");
+        // Empty fixture: start is out of bounds.
         await expect(tnt.getRecipients(1, 2)).to.be.revertedWithCustomError(tnt, "InvalidIndex");
+
+        // Add a recipient so start is within bounds and only the reversed range is invalid.
+        await tnt.issueToken(addr2.address);
+        await expect(tnt.getRecipients(1, 0)).to.be.revertedWithCustomError(tnt, "InvalidIndex");
     });
 
     it("should return all issued tokens, including revoked and burned ones", async function () {
@@ -153,7 +157,7 @@ describe("TNT and Factory Contracts", function () {
         await tnt.grantRevokerRole(addr1.address);
 
         await tnt.connect(addr1).issueToken(addr2.address); // token 0
-        await tnt.connect(addr1).issueToken(addr2.address); // token 1
+        await tnt.connect(owner).issueToken(addr2.address); // token 1
         await tnt.connect(addr1).issueToken(addr2.address); // token 2
 
         await tnt.connect(addr1).revokeToken(0);
@@ -166,8 +170,41 @@ describe("TNT and Factory Contracts", function () {
         expect(Array.from(allIssuedTokens.tokenIds)).to.deep.equal([0n, 1n, 2n]);
         expect(Array.from(allIssuedTokens.issuers)).to.deep.equal([
             addr1.address,
+            owner.address,
+            addr1.address,
+        ]);
+    });
+
+    it("should paginate token history with bounded reads", async function () {
+        await tnt.grantMinterRole(addr1.address);
+        await tnt.connect(addr1).issueToken(addr2.address);
+        await tnt.connect(addr1).issueToken(addr2.address);
+        await tnt.connect(addr1).issueToken(addr2.address);
+
+        expect(await tnt.getAllIssuedTokenCount(addr2.address)).to.equal(3n);
+        expect(await tnt.getActiveTokenCount(addr2.address)).to.equal(3n);
+
+        const allIssuedPage = await tnt.getAllIssuedTokensPaginated(addr2.address, 1, 2);
+        expect(Array.from(allIssuedPage.tokenIds)).to.deep.equal([1n, 2n]);
+        expect(Array.from(allIssuedPage.issuers)).to.deep.equal([
             addr1.address,
             addr1.address,
         ]);
+
+        const activePage = await tnt.getActiveTokensPaginated(addr2.address, 0, 2);
+        expect(Array.from(activePage.tokenIds)).to.deep.equal([0n, 1n]);
+
+        const emptyPage = await tnt.getActiveTokensPaginated(addr2.address, 3, 2);
+        expect(emptyPage.tokenIds.length).to.equal(0);
+
+        const zeroLimitPage = await tnt.getActiveTokensPaginated(addr2.address, 1, 0);
+        expect(zeroLimitPage.tokenIds.length).to.equal(0);
+
+        await expect(
+            tnt.getAllIssuedTokensPaginated(addr2.address, 0, 101)
+        ).to.be.revertedWithCustomError(tnt, "InvalidPageSize");
+        await expect(
+            tnt.getActiveTokensPaginated(addr2.address, 4, 1)
+        ).to.be.revertedWithCustomError(tnt, "InvalidIndex");
     });
 });

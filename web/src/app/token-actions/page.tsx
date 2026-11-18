@@ -12,6 +12,7 @@ import {
 } from "@/utils/roleManager";
 import { config } from "@/utils/config";
 import { getPublicClient } from "@wagmi/core";
+import { fetchActiveTokens, fetchAllIssuedTokens } from "@/utils/tntTokens";
 
 interface RecipientInfo {
   address: `0x${string}`;
@@ -172,18 +173,12 @@ export default function TokenActionsPage() {
           async (recipientAddress) => {
             try {
               const [allTokensData, activeTokensData] = await Promise.all([
-                publicClient.readContract({
-                  address: contractAddress,
-                  abi: TNTAbi,
-                  functionName: "getAllIssuedTokens",
-                  args: [recipientAddress],
-                }) as Promise<[bigint[], `0x${string}`[]]>,
-                publicClient.readContract({
-                  address: contractAddress,
-                  abi: TNTAbi,
-                  functionName: "getActiveTokens",
-                  args: [recipientAddress],
-                }) as Promise<[bigint[], `0x${string}`[]]>,
+                fetchAllIssuedTokens(
+                  contractAddress,
+                  chainId,
+                  recipientAddress
+                ),
+                fetchActiveTokens(contractAddress, chainId, recipientAddress),
               ]);
 
               const [allTokenIds, allIssuers] = allTokensData;

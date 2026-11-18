@@ -5,11 +5,9 @@ import { Info, RefreshCcw, Copy, ExternalLink } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { getPublicClient } from "@wagmi/core";
-import { config } from "@/utils/config";
 import { useSearchParams } from "next/navigation";
-import { TNTAbi } from "@/utils/contractsABI/TNT";
 import { TNTRoleManager } from "@/utils/roleManager";
+import { fetchActiveTokens, fetchAllIssuedTokens } from "@/utils/tntTokens";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { useAccount } from "wagmi";
@@ -109,23 +107,11 @@ export default function InteractionClient() {
 
     try {
       setIsLoadingUserTokens(true);
-      const publicClient = getPublicClient(config as any, { chainId });
-      if (!publicClient) return;
 
-      // Get user's tokens from this specific TNT contract
+      // Get user's tokens from this specific TNT contract using bounded pages.
       const [allTokensData, activeTokensData] = await Promise.all([
-        publicClient.readContract({
-          address: tokenAddress,
-          abi: TNTAbi,
-          functionName: "getAllIssuedTokens",
-          args: [address],
-        }) as Promise<[bigint[], `0x${string}`[]]>,
-        publicClient.readContract({
-          address: tokenAddress,
-          abi: TNTAbi,
-          functionName: "getActiveTokens",
-          args: [address],
-        }) as Promise<[bigint[], `0x${string}`[]]>,
+        fetchAllIssuedTokens(tokenAddress, chainId, address),
+        fetchActiveTokens(tokenAddress, chainId, address),
       ]);
 
       const [allTokenIds, allIssuers] = allTokensData;

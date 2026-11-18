@@ -15,10 +15,12 @@ contract TNT is ERC721, AccessControl {
     error NotIssuer();
     error NotOwner();
     error InvalidIndex();
+    error InvalidPageSize();
     error NonTransferable();
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant REVOKER_ROLE = keccak256("REVOKER_ROLE");
+    uint256 public constant MAX_TOKEN_PAGE_SIZE = 100;
 
     uint256 private _nextTokenId;
     mapping(uint256 => address) public tokenIssuers;
@@ -115,30 +117,47 @@ contract TNT is ERC721, AccessControl {
         }
     }
     
+    /// @dev Legacy unbounded getter. Prefer getActiveTokensPaginated for
+    /// large token histories.
     function getActiveTokens(address user) public view returns (uint256[] memory tokenIds, address[] memory issuers) {
-        uint256 len = _tokensByUser[user].length;
-        tokenIds = new uint256[](len);
-        issuers = new address[](len);
-
-        for (uint256 i = 0; i < len; i++) {
-            tokenIds[i] = _tokensByUser[user][i];
-            issuers[i] = tokenIssuers[tokenIds[i]];
-        }
+        return _getTokenPage(_tokensByUser[user], 0, _tokensByUser[user].length);
     }
 
-    function getAllIssuedTokens(address user) public view returns (uint256[] memory tokenIds, address[] memory issuers) {
-        uint256 len = _allTokensByUser[user].length;
-        tokenIds = new uint256[](len);
-        issuers = new address[](len);
+    function getActiveTokensPaginated(address user, uint256 offset, uint256 limit) public view returns (uint256[] memory tokenIds, address[] memory issuers) {
+        if (limit > MAX_TOKEN_PAGE_SIZE) revert InvalidPageSize();
+        return _getTokenPage(_tokensByUser[user], offset, offset + limit);
+    }
 
-        for (uint256 i = 0; i < len; i++) {
-            tokenIds[i] = _allTokensByUser[user][i];
-            issuers[i] = tokenIssuers[tokenIds[i]];
+    /// @dev Legacy unbounded getter. Prefer getAllIssuedTokensPaginated for
+    /// large token histories.
+    function getAllIssuedTokens(address user) public view returns (uint256[] memory tokenIds, address[] memory issuers) {
+        return _getTokenPage(_allTokensByUser[user], 0, _allTokensByUser[user].length);
+    }
+
+    function getAllIssuedTokensPaginated(address user, uint256 offset, uint256 limit) public view returns (uint256[] memory tokenIds, address[] memory issuers) {
+        if (limit > MAX_TOKEN_PAGE_SIZE) revert InvalidPageSize();
+        return _getTokenPage(_allTokensByUser[user], offset, offset + limit);
+    }
+
+    function _getTokenPage(uint256[] storage tokenIdList, uint256 start, uint256 end) internal view returns (uint256[] memory tokenIds, address[] memory issuers) {
+        uint256 len = tokenIdList.length;
+        if (start > end || start > len) revert InvalidIndex();
+        if (end > len) end = len;
+
+        uint256 count = end - start;
+        tokenIds = new uint256[](count);
+        issuers = new address[](count);
+
+        for (uint256 i = 0; i < count; i++) {
+            uint256 tokenId = tokenIdList[start + i];
+            tokenIds[i] = tokenId;
+            issuers[i] = tokenIssuers[tokenId];
         }
     }
 
     function hasActiveTokens(address user) public view returns (bool) { return _tokensByUser[user].length > 0; }
     function getActiveTokenCount(address user) public view returns (uint256) { return _tokensByUser[user].length; }
+    function getAllIssuedTokenCount(address user) public view returns (uint256) { return _allTokensByUser[user].length; }
     function getAllParticipantsCount() public view returns (uint256) { return _allUsers.length; }
 
     function getUsers(uint256 start, uint256 end) public view returns (address[] memory) {
