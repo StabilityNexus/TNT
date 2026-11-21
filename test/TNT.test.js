@@ -82,6 +82,22 @@ describe("TNT and Factory Contracts", function () {
             .withArgs(addr1.address, addr2.address, tokenId);
     });
     
+    it("should not leave a burned token active when burned during mint", async function () {
+        await tnt.grantMinterRole(addr1.address);
+
+        const Receiver = await ethers.getContractFactory("MintAndBurnReceiver");
+        const receiver = await Receiver.deploy(tntAddress);
+        await receiver.waitForDeployment();
+
+        await expect(tnt.connect(addr1).issueToken(receiver.target))
+            .to.emit(tnt, "TokenIssued").withArgs(addr1.address, receiver.target, 0)
+            .to.emit(tnt, "TokenBurned").withArgs(addr1.address, receiver.target, 0);
+
+        expect(await tnt.getActiveTokenCount(receiver.target)).to.equal(0);
+        expect(await factory.getUserTNTCount(receiver.target)).to.equal(0);
+        await expect(tnt.ownerOf(0)).to.be.reverted;
+    });
+
     it("should prevent revocation if not revokable", async function () {
         const tokenId = 0;
         await expect(
