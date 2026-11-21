@@ -59,17 +59,23 @@ contract TNT is ERC721, AccessControl {
         if (user == address(0)) revert InvalidUser();
         
         uint256 tokenId = _nextTokenId++;
-        _safeMint(user, tokenId);
         tokenIssuers[tokenId] = msg.sender;
         metadata[tokenId] = TokenMetadata(block.timestamp);
         _tokensByUser[user].push(tokenId);
-        
+
         if (!_isUser[user]) {
             _allUsers.push(user);
             _isUser[user] = true;
         }
         emit TokenIssued(msg.sender, user, tokenId);
-        IFactory(factoryContract).registerIssuedToken(user, address(this));
+
+        _safeMint(user, tokenId);
+
+        // The recipient may have burned the token from its mint callback. Only
+        // register tokens that are still owned after the callback completes.
+        if (_ownerOf(tokenId) != address(0)) {
+            IFactory(factoryContract).registerIssuedToken(user, address(this));
+        }
     }
     
     function setImageURL(string memory newURL) external onlyRole(DEFAULT_ADMIN_ROLE) {
